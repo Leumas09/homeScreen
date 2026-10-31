@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B1016" />
+    <meta name="description" content="Maroubra: the sky, the sea, the beach and the night, read like an expert would." />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <title>Maroubra</title>
+  </head>
+  <body>
+    <script>
+      // Thème provisoire avant le calcul exact du crépuscule : nuit entre 20 h et 6 h à Sydney.
+      (function () {
+        var at = new URLSearchParams(location.search).get("at");
+        var h = +new Intl.DateTimeFormat("en-AU", { hour: "numeric", hourCycle: "h23", timeZone: "Australia/Sydney" }).format(at ? new Date(at) : new Date());
+        document.documentElement.dataset.theme = h >= 20 || h < 6 ? "night" : "day";
+      })();
+    </script>
+    <div id="root">
+      <div class="app"><nav class="strip" aria-label="Maroubra right now"><div class="clock">
+        <div class="time" id="shell-time">&nbsp;</div><div class="date" id="shell-date">Maroubra</div>
+      </div></nav></div>
+    </div>
+    <script>
+      // Coquille statique : l'heure s'affiche avant le JavaScript de l'app.
+      (function () {
+        var at = new URLSearchParams(location.search).get("at"), d = at ? new Date(at) : new Date();
+        var o = { timeZone: "Australia/Sydney" };
+        document.getElementById("shell-time").textContent = new Intl.DateTimeFormat("en-AU", Object.assign({ hour: "2-digit", minute: "2-digit", hourCycle: "h23" }, o)).format(d);
+        document.getElementById("shell-date").textContent = new Intl.DateTimeFormat("en-AU", Object.assign({ weekday: "long", day: "numeric", month: "long" }, o)).format(d);
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

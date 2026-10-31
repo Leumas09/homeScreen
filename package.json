@@ -1,0 +1,10 @@
+{
+  "name": "maroubra",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "test": "npm test --workspaces --if-present",
+    "typecheck": "tsc -b"
+  }
+}

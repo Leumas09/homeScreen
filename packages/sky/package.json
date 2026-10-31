@@ -1,0 +1,10 @@
+{
+  "name": "@maroubra/sky",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": { "test": "vitest run" },
+  "dependencies": { "astronomy-engine": "2.1.19" },
+  "devDependencies": { "vitest": "3.2.4", "typescript": "5.9.3", "tsx": "4.20.6" }
+}

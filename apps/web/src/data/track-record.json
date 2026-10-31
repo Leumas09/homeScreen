@@ -1,0 +1,187 @@
+{
+  "generated": "2026-10-31",
+  "checks": [
+    {
+      "name": "Temperature at Sydney Airport",
+      "judge": "Observations, held-out period",
+      "target": "error \u221225% vs raw",
+      "result": "\u221226.8% (95%: 22.7 to 30.8)",
+      "pass": true
+    },
+    {
+      "name": "Wind at Sydney Airport",
+      "judge": "Observations, held-out period",
+      "target": "error \u221225% vs raw",
+      "result": "\u221211.4% (95%: 7.9 to 14.8)",
+      "pass": false
+    },
+    {
+      "name": "Sun and Moon rise and set, 2027",
+      "judge": "Skyfield + JPL DE421",
+      "target": "within 30 s",
+      "result": "worst 2.1 s",
+      "pass": true
+    },
+    {
+      "name": "Planet positions, 2027 evenings",
+      "judge": "Skyfield + JPL DE421",
+      "target": "within 1\u2032",
+      "result": "worst 0.23\u2032",
+      "pass": true
+    }
+  ],
+  "verifications": [
+    {
+      "title": "Temperature at Sydney Airport",
+      "unit": "\u00b0C",
+      "best": "learned correction",
+      "gain": 0.2682424954998912,
+      "ci": [
+        0.226706288072721,
+        0.3084567593306918
+      ],
+      "target": 0.25,
+      "test": "2025-02-01 to 2025-08-24, 3252 forecasts",
+      "methods": [
+        {
+          "name": "Raw model (GFS)",
+          "mae": 1.2550533921035867
+        },
+        {
+          "name": "Bias removed",
+          "mae": 1.120261435562454
+        },
+        {
+          "name": "Linear MOS",
+          "mae": 1.001127741631586
+        },
+        {
+          "name": "Running bias (NOAA method)",
+          "mae": 1.03744192631076
+        },
+        {
+          "name": "Learned correction",
+          "mae": 0.9183947382201172
+        }
+      ],
+      "leads": [
+        {
+          "lead": 6,
+          "raw": 1.2556681247409607,
+          "best": 0.8788392956079617
+        },
+        {
+          "lead": 12,
+          "raw": 1.1667779100840623,
+          "best": 0.8964455976321042
+        },
+        {
+          "lead": 18,
+          "raw": 1.2647207595697025,
+          "best": 0.8916926679001926
+        },
+        {
+          "lead": 24,
+          "raw": 1.2086668612407703,
+          "best": 0.9310042024633212
+        },
+        {
+          "lead": 30,
+          "raw": 1.3114988553982894,
+          "best": 0.9048736003726469
+        },
+        {
+          "lead": 36,
+          "raw": 1.2144470287377025,
+          "best": 0.9008772962389022
+        },
+        {
+          "lead": 42,
+          "raw": 1.3404632003840502,
+          "best": 0.9542742945735536
+        },
+        {
+          "lead": 48,
+          "raw": 1.2785581985691707,
+          "best": 0.9890430907893902
+        }
+      ]
+    },
+    {
+      "title": "Wind at Sydney Airport",
+      "unit": "m/s",
+      "best": "linear mos",
+      "gain": 0.11368444546092649,
+      "ci": [
+        0.07878556488235534,
+        0.1480994516334341
+      ],
+      "target": 0.25,
+      "test": "2025-02-01 to 2025-08-24, 3256 forecasts",
+      "methods": [
+        {
+          "name": "Raw model (GFS)",
+          "mae": 1.4306909993089516
+        },
+        {
+          "name": "Bias removed",
+          "mae": 1.345068360220363
+        },
+        {
+          "name": "Linear MOS",
+          "mae": 1.2680436864265747
+        },
+        {
+          "name": "Running bias (NOAA method)",
+          "mae": 1.3640509077561902
+        },
+        {
+          "name": "Learned correction",
+          "mae": 1.2806468902690613
+        }
+      ],
+      "leads": [
+        {
+          "lead": 6,
+          "raw": 1.2905452445995393,
+          "best": 1.2033037462108132
+        },
+        {
+          "lead": 12,
+          "raw": 1.3997157816339618,
+          "best": 1.1968207094813674
+        },
+        {
+          "lead": 18,
+          "raw": 1.4393234622067732,
+          "best": 1.3167995388728937
+        },
+        {
+          "lead": 24,
+          "raw": 1.4390068592556757,
+          "best": 1.2237692536169964
+        },
+        {
+          "lead": 30,
+          "raw": 1.449102179446152,
+          "best": 1.3404983161660364
+        },
+        {
+          "lead": 36,
+          "raw": 1.4312928221250658,
+          "best": 1.202176823991359
+        },
+        {
+          "lead": 42,
+          "raw": 1.5217973781830625,
+          "best": 1.3922023515572026
+        },
+        {
+          "lead": 48,
+          "raw": 1.474744267021383,
+          "best": 1.2687787515159288
+        }
+      ]
+    }
+  ]
+}
