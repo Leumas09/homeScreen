@@ -1,6 +1,10 @@
 // Moteur du ciel de Maroubra : éphémérides calculées localement (astronomy-engine),
 // sans aucun appel réseau. Vérifié contre Skyfield + JPL DE421 (test/skyfield.test.ts).
-import * as A from "astronomy-engine";
+import * as Astro from "astronomy-engine";
+
+// astronomy-engine est un module CommonJS : sous Node en ESM, ses exports arrivent dans « default ».
+const A: typeof Astro = (Astro as unknown as { default?: typeof Astro }).default ?? Astro;
+export type Body = Astro.Body;
 
 export interface Site {
   lat: number;
@@ -27,7 +31,7 @@ export interface RiseSet {
 }
 
 /** Prochain lever ou coucher après `from`, sur une fenêtre d'un jour. */
-export function riseSet(body: A.Body, from: Date, site: Site = MAROUBRA): RiseSet {
+export function riseSet(body: Astro.Body, from: Date, site: Site = MAROUBRA): RiseSet {
   const o = observer(site);
   const rise = A.SearchRiseSet(body, o, +1, from, 1, site.eyeHeightM);
   const set = A.SearchRiseSet(body, o, -1, from, 1, site.eyeHeightM);
@@ -44,7 +48,7 @@ export interface Horizontal {
   az: number;
 }
 
-export function horizontal(body: A.Body, at: Date, site: Site = MAROUBRA): Horizontal {
+export function horizontal(body: Astro.Body, at: Date, site: Site = MAROUBRA): Horizontal {
   const o = observer(site);
   const eq = A.Equator(body, at, o, true, true);
   const h = A.Horizon(at, o, eq.ra, eq.dec, "normal");
@@ -124,7 +128,7 @@ export interface VisiblePlanet {
   magnitude: number;
 }
 
-const PLANETS = [A.Body.Mercury, A.Body.Venus, A.Body.Mars, A.Body.Jupiter, A.Body.Saturn];
+const PLANETS: Astro.Body[] = [A.Body.Mercury, A.Body.Venus, A.Body.Mars, A.Body.Jupiter, A.Body.Saturn];
 
 /** Planètes au-dessus de `minAlt` degrés à l'instant donné, les plus brillantes d'abord. */
 export function visiblePlanets(at: Date, site: Site = MAROUBRA, minAlt = 10): VisiblePlanet[] {

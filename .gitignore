@@ -3,3 +3,4 @@ node_modules/
 bench/data/
 apps/web/dist/
 __pycache__/
+apps/hub/dist/

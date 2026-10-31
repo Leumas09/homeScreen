@@ -12,6 +12,7 @@ import {
   riseSet,
   sunAltitudeCrossing,
   visiblePlanets,
+  type Body,
   type VisiblePlanet,
   type Window,
 } from "@maroubra/sky";
@@ -48,7 +49,7 @@ export function phaseName(angle: number): string {
   return names[Math.round(angle / 45) % 8];
 }
 
-function track(body: A.Body, from: Date, hours: number, stepMin = 10): TrackPoint[] {
+function track(body: Body, from: Date, hours: number, stepMin = 10): TrackPoint[] {
   const out: TrackPoint[] = [];
   for (let m = 0; m <= hours * 60; m += stepMin) {
     const t = new Date(from.getTime() + m * 60e3);
@@ -125,7 +126,7 @@ export function computeSky(now: Date): SkyModel {
     tracks: {
       sun: track(A.Body.Sun, now, 24, 15),
       moon: track(A.Body.Moon, now, 24, 15),
-      planets: Object.fromEntries(planets.map((p) => [p.name, track(p.name as A.Body, now, 12, 15)])),
+      planets: Object.fromEntries(planets.map((p) => [p.name, track(p.name as Body, now, 12, 15)])),
     },
   };
 }
