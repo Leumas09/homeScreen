@@ -1,8 +1,13 @@
-// Microsoft Foundry : compte AIServices et déploiement du modèle gpt-6.1-sol (Global Standard,
-// disponible en Australia East, sans demande d'accès). Appelé par l'identité managée de l'app,
-// sans clé : authentification locale désactivée.
+// Microsoft Foundry : compte AIServices et déploiement du modèle gpt-6.1-sol (Data Zone Standard
+// Asie-Pacifique, disponible en Australia East, sans demande d'accès). Appelé par l'identité managée
+// de l'app, sans clé : authentification locale désactivée.
+// Data Zone Standard plutôt que Global Standard : le quota Global Standard d'un modèle est un pool
+// unique pour toute la souscription, toutes régions confondues, et il est déjà consommé par d'autres
+// projets (capacité disponible 0 au 31/10/2026). Le quota Data Zone est séparé, par zone de données,
+// et le traitement reste en Asie-Pacifique.
 // Learn : https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure#gpt-61
-//         https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability
+//         https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability#data-zone-standard
+//         https://learn.microsoft.com/azure/foundry/foundry-models/quotas-limits#subscription-level-quota-management
 //         https://learn.microsoft.com/azure/developer/ai/keyless-connections#configure-roles-for-authorization
 param name string
 param location string
@@ -11,6 +16,9 @@ param runPrincipalId string
 param runIdentityId string
 param modelName string = 'gpt-6.1-sol'
 param modelVersion string = '2026-09-29'
+@description('Type de déploiement : DataZoneStandard (quota libre) ou GlobalStandard (quota partagé de la souscription).')
+@allowed(['DataZoneStandard', 'GlobalStandard'])
+param modelSku string = 'DataZoneStandard'
 @description('Capacité en milliers de jetons par minute.')
 param modelCapacity int = 20
 
@@ -37,7 +45,7 @@ resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2026-09-01
   parent: account
   name: modelName
   sku: {
-    name: 'GlobalStandard'
+    name: modelSku
     capacity: modelCapacity
   }
   properties: {
