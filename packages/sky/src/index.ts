@@ -3,7 +3,7 @@
 import * as Astro from "astronomy-engine";
 
 // astronomy-engine est un module CommonJS : sous Node en ESM, ses exports arrivent dans « default ».
-const A: typeof Astro = (Astro as unknown as { default?: typeof Astro }).default ?? Astro;
+const A: typeof Astro = (Reflect.get(Astro, "default") as typeof Astro | undefined) ?? Astro;
 export type Body = Astro.Body;
 
 export interface Site {

@@ -12,7 +12,7 @@ Ce qui change par rapport à la v1 :
 - Retirés : trajets, agenda, tâches, trafic (trop personnels, ou pas demandés).
 - Le site est pour **la famille**, en **anglais**, et **s'adapte** à l'ordinateur, à la tablette et au téléphone.
 - Les actualités sont **locales** (Randwick, Maroubra), en anglais.
-- Les photos viennent d'un dossier OneDrive.
+- Les photos (dossier OneDrive personnel) sont reportées à un lot futur ; aucune vue photo dans cette version.
 
 ---
 
@@ -140,7 +140,7 @@ Chaque prévision est confrontée à une observation indépendante et à une **r
 ### B.1 Une seule app, trois formats, deux humeurs
 
 - **Formats** : téléphone (puces + vues empilées, comme le prototype B mobile), tablette (bandeau + vue, comme le prototype B tablette), ordinateur (vue + panneau latéral « Next 24 h » toujours visible). Mise en page fluide, pas trois sites.
-- **Mode ambiant** (tablette posée) contre **mode personnel** (téléphone en main). Le mode ambiant ajoute le maintien de l'écran allumé (Screen Wake Lock), le cadre photo et la protection contre le marquage. Il ne dépend pas de la taille d'écran. La tablette Android n'étant pas encore choisie, rien ne dépend du modèle.
+- **Mode ambiant** (tablette posée) contre **mode personnel** (téléphone en main). Le mode ambiant ajoute le maintien de l'écran allumé (Screen Wake Lock) et la luminosité réduite la nuit. Il ne dépend pas de la taille d'écran. La tablette Android n'étant pas encore choisie, rien ne dépend du modèle.
 - **Jour et Nuit** : bascule au crépuscule civil, calculée. La nuit, le thème A atténué, et option « red light » pour ne pas éblouir.
 
 ### B.2 Les vues
@@ -155,8 +155,7 @@ L'écran principal est construit autour d'**une carte et d'un axe de temps** par
 | **Sea** | Houle mesurée à la bouée et prévue, période, direction, température de l'eau, marée | Propagation **bouée → plage**, état de la mer « glassy / choppy / messy », navires vers Port Botany (si la source est validée) |
 | **Sky** (jour et nuit) | Soleil, lune, planètes, ISS, nuit noire, aurores | **Sunrise score** sur la mer, **moonrise over the sea**, fenêtre Voie lactée, passages ISS visibles, alerte aurore sur veille BOM |
 | **Fire & Air** | Feux actifs proches, qualité de l'air | Trajectoire de la fumée selon le vent, confirmée par le PM2.5 |
-| **Local news** | Actualités de Randwick et Maroubra, en anglais | Filtrage géographique et résumé par Claude, doublons regroupés |
-| **Photos** | Diaporama du dossier OneDrive | Lieu et date (EXIF), démarrage automatique en cas d'inactivité ou la nuit |
+| **Local news** | Actualités de Randwick et Maroubra, en anglais | Filtrage géographique et résumé par le modèle gpt-6.1-sol, doublons regroupés |
 | **Track record** | Scores de vérification de chaque prévision | La preuve publique que l'écran a raison, et où il se trompe |
 
 ### B.3 Les moments
@@ -174,7 +173,7 @@ Des règles déclaratives sur l'état normalisé produisent des moments (titre e
 
 Ils s'affichent dans le panneau « Next 24 h » et partent en notification Web Push vers ceux qui les ont choisis, dans la limite du budget de notifications.
 
-Le **brief** est une phrase en tête d'écran, rédigée par Claude à partir de l'état réel et des moments, jamais inventée.
+Le **brief** est une phrase en tête d'écran, rédigée par le modèle gpt-6.1-sol (Foundry) à partir de l'état réel et des moments, jamais inventée.
 
 ### B.4 Actualités locales (en anglais)
 
@@ -186,7 +185,7 @@ Sources candidates, à valider en phase 0 :
 - Beachwatch et RFS pour les actualités environnementales.
 - Je n'ai pas trouvé de flux pour le Southern Courier.
 
-Claude classe chaque article (local ou non, sujet) et le résume. **Juge** : un échantillon de 100 articles étiquetés à la main, avec une précision visée d'au moins 90 %.
+Le modèle classe chaque article (local ou non, sujet) et le résume. **Juge** : un échantillon de 100 articles étiquetés à la main, avec une précision visée d'au moins 90 %.
 
 ---
 
@@ -209,13 +208,12 @@ flowchart LR
     S5[SWPC, BOM SWS, Celestrak]
     S6[RFS, FIRMS, qualité de l'air]
     S7[Beachwatch, Randwick, ABC]
-    S8[OneDrive]
   end
   subgraph RG["rg-app-maroubra (project=maroubra)"]
     APP["Container App « maroubra »<br/>web + API + SSE + collecteurs<br/>1 réplica"]
     JOB["Job planifié « maroubra-verify »<br/>vérification, MOS, harmoniques"]
     ST[("Storage : Tables + Blob<br/>clé partagée désactivée")]
-    FD["Foundry : Claude Haiku 5.5<br/>auth Entra, sans clé"]
+    FD["Foundry : gpt-6.1-sol<br/>auth Entra, sans clé"]
     ID["id-maroubra-run"]
   end
   subgraph Socle["rg-kiwi-apps (socle, inchangé)"]
@@ -239,9 +237,9 @@ flowchart LR
 | Temps réel | Server-Sent Events. L'ingress coupe toute requête HTTP à **240 s**, donc le serveur ferme proprement le flux toutes les 200 s environ, et le client se reconnecte avec `Last-Event-ID` (reprise sans perte). Un commentaire de maintien est envoyé toutes les 15 s. | [Ingress in Azure Container Apps](https://learn.microsoft.com/azure/container-apps/ingress-overview#protocol-types) |
 | Vérification, MOS, harmoniques | Un job Container Apps planifié (cron en UTC), facturé seulement pendant l'exécution. | [Jobs in Azure Container Apps](https://learn.microsoft.com/azure/container-apps/jobs#job-trigger-types) |
 | Historique et archive | Compte de stockage : Tables pour les séries et l'archive des prévisions, Blob pour PMTiles, vignettes Himawari et cache photos. `allowSharedKeyAccess: false`, accès par `id-maroubra-run` avec les rôles Storage Table Data Contributor et Storage Blob Data Contributor. | [Prevent Shared Key authorization](https://learn.microsoft.com/azure/storage/common/shared-key-authorization-prevent) |
-| Connexion de la famille | Authentification intégrée Container Apps avec Microsoft Entra ID. La famille est invitée dans le tenant, avec « assignation requise » pour limiter l'accès. **Sans secret** : l'app registration fait confiance à une identité managée (credential fédéré). Ce schéma est documenté pour App Service et Static Web Apps. Container Apps partage le même système d'authentification, mais il **reste à confirmer en phase 0**. Google demanderait un secret client stocké dans l'app : écarté. | [Auth in Container Apps](https://learn.microsoft.com/azure/container-apps/authentication), [Use a managed identity instead of a secret](https://learn.microsoft.com/azure/app-service/configure-authentication-provider-aad#use-a-managed-identity-instead-of-a-secret), [Restrict to a set of users](https://learn.microsoft.com/entra/identity-platform/howto-restrict-your-app-to-a-set-of-users) |
-| Claude | Claude Haiku 5.5 déployé dans Microsoft Foundry, appelé avec l'identité managée (Entra ID, sans clé). Prérequis : abonnement payant avec moyen de paiement, et région de facturation où Anthropic vend les modèles, **à vérifier pour l'Australie**. | [Deploy and use Claude models in Foundry](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-claude), [Claude models in Foundry](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/claude-models) |
-| Photos OneDrive | **OneDrive professionnel** : permission applicative `Files.SelectedOperations.Selected`, limitée au seul dossier, obtenue par l'identité managée, sans secret. **OneDrive personnel** : seul l'accès délégué fonctionne, ce qui oblige à stocker un jeton de rafraîchissement (un secret, donc ton accord). | [Selected permissions in OneDrive and SharePoint](https://learn.microsoft.com/graph/permissions-selected-overview), [Permissions reference](https://learn.microsoft.com/graph/permissions-reference#all-permissions) |
+| Connexion de la famille | **Décision du 31/10 : mot de passe familial partagé**, données publiques donc sécurité volontairement simple. Mot de passe en secret de la Container App, comparaison à temps constant, cookie signé HttpOnly (400 jours si « Keep me signed in »), limitation des essais par adresse et globale, sessions invalidées au changement de mot de passe. | [Manage secrets in Azure Container Apps](https://learn.microsoft.com/azure/container-apps/manage-secrets#referencing-secrets-in-environment-variables) |
+| Modèle de langage | **gpt-6.1-sol** (2026-09-29) déployé dans Microsoft Foundry en Global Standard, disponible en Australia East sans demande d'accès ; appelé par l'API Responses avec l'identité managée (rôle Cognitive Services OpenAI User), authentification locale désactivée. | [Foundry Models sold by Azure](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure#gpt-61), [Region availability](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability), [Keyless authentication](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/configure-entra-id) |
+| Photos OneDrive (lot futur) | **OneDrive personnel** : seul l'accès délégué fonctionne, avec un jeton de rafraîchissement à stocker en secret. | [Selected permissions in OneDrive and SharePoint](https://learn.microsoft.com/graph/permissions-selected-overview), [Permissions reference](https://learn.microsoft.com/graph/permissions-reference#all-permissions) |
 | Journaux | Sortie console structurée, collectée par l'environnement dans `log-kiwi-apps`. Une page `/health` affiche la fraîcheur de chaque source. | [docs/socle.md du socle](https://github.com/Leumas09/platform/blob/main/docs/socle.md) |
 
 **Pile logicielle**
@@ -257,7 +255,7 @@ flowchart LR
 
 - Container App 0,25 vCPU / 0,5 Gio active en continu : une quinzaine de dollars US par mois après la franchise.
 - Job et stockage : quelques dollars.
-- Claude Haiku pour le brief et les actualités : faible, à chiffrer en phase 0.
+- gpt-6.1-sol pour le brief (toutes les 30 min) et le tri des actualités : faible.
 
 ---
 
@@ -275,7 +273,7 @@ Chaque phase se termine par quelque chose d'utilisable par la famille.
 ### Phase 1 : l'écran vivant
 - Bandeau et vues Weather, Beach, Sea en données réelles.
 - Trois formats, thèmes Jour et Nuit.
-- Actualités locales (RSS + filtre simple), mode photo.
+- Actualités locales (RSS + filtre simple).
 - ✅ La tablette et les téléphones affichent Maroubra en direct.
 
 ### Phase 2 : la scène unifiée et Overhead
@@ -286,12 +284,12 @@ Chaque phase se termine par quelque chose d'utilisable par la famille.
 ### Phase 3 : Sky et la nuit
 - Éphémérides, ISS, planètes, nuit noire, aurores.
 - Sunrise score, moonrise over the sea.
-- Thème Nuit atténué, cadre photo nocturne.
+- Thème Nuit atténué.
 - ✅ Le soir, l'écran dit quoi regarder et quand.
 
 ### Phase 4 : l'intelligence vérifiée
 - MOS, harmoniques de marée, nowcast pluie, propagation de houle, prédiction de survol.
-- Moments, notifications Web Push, brief Claude, filtrage des actualités.
+- Moments, notifications Web Push, brief par le modèle, filtrage des actualités.
 - **Page Track record.**
 - ✅ Les objectifs durs de A.4 sont mesurés et publiés, atteints ou non.
 
@@ -315,10 +313,12 @@ Chaque phase se termine par quelque chose d'utilisable par la famille.
 | Session Azure (`az login` sur `ops@…`) | ❌ à faire par toi au moment du déploiement |
 | Création du dépôt `app-maroubra` | ❌ ton accord (voir E.2) |
 | Comptes de la famille invités dans le tenant | ❌ à faire par toi (connexions interactives) |
-| Claude dans Foundry | ❌ disponibilité pour ton abonnement et ta région à vérifier |
+| gpt-6.1-sol dans Foundry | ✅ disponible en Australia East (Learn) ; quota à confirmer au déploiement |
 | Historiques pour calibrer : traces ADS-B passées (archives publiques adsb.lol), séries du marégraphe (UHSLC ou MHL), archives METAR YSSY | ❌ à valider en phase 0 |
 
-### E.2 Décisions à prendre
+### E.2 Décisions (tranchées le 31/10/2026)
+
+Nom `maroubra.apps.akakiwi.com` ; mot de passe familial partagé ; photos OneDrive personnel dans un lot futur ; secrets acceptés ; pas d'antenne ADS-B ; famille de 4, ton adulte (le plus jeune a 12 ans) ; modèle gpt-6.1-sol. Questions d'origine, pour mémoire :
 
 1. **Nom** : `maroubra.apps.akakiwi.com` et dépôt `app-maroubra` ? Le dépôt actuel `homeScreen` ne suit pas la convention `app-<nom>`. Je propose de le **renommer en `app-maroubra` avant** de créer le credential fédéré : le sujet OIDC contient le nom et l'ID du dépôt, un renommage après coup le casserait.
 2. **OneDrive** : personnel ou professionnel ? Professionnel : aucun secret. Personnel : un jeton de rafraîchissement à stocker, donc ton accord.
@@ -420,3 +420,36 @@ Méthode météo : six variantes comparées à chaque échéance (modèle brut G
 - Actualités : [Randwick City Council, latest news](https://www.randwick.nsw.gov.au/about-us/news/latest-news)
 - Baleines : [Captain Cook Cruises, sightings](https://www.captaincook.com.au/sydney-harbour-cruises/explore/whale-watching/sightings) (journal d'opérateur, pas un flux officiel)
 - Bioluminescence : [Deep Sea News](https://deepseanews.com/2012/11/whats-green-and-gold-and-red-all-over/) (pas de méthode de prévision)
+
+---
+
+## Partie G : développement complet (31 octobre 2026)
+
+Développé d'un seul tenant, sans phases imposées. Tout est testé localement ; le déploiement attend ton OK sur le what-if (`docs/DEPLOY.md`).
+
+### G.1 Ce qui est construit
+
+| Partie | Contenu | Juge |
+|---|---|---|
+| Accès | Mot de passe familial, cookie signé, limitation des essais, en-têtes de sécurité | 10 tests serveur (dont blocage après 8 essais, invalidation au changement de mot de passe, origine refusée) |
+| Temps réel | SSE avec état complet puis mises à jour, fermeture à 200 s pour le plafond de 240 s de Container Apps | Test de flux |
+| Collecteurs | Open-Meteo (météo, mer, air), METAR YSSY, bouée MHL (AWS, vérifiée en direct), adsb.lol (positions et routes), NSW RFS, NOAA SWPC, ISS (Celestrak, SGP4), actualités locales | Flux RFS réel ; passages ISS identiques à Skyfield ; formats tirés du code source d'adsb.lol |
+| Calculs | Score de baignade, score de lever de soleil, moments et leur avance de notification, brief (gpt-6.1-sol, repli par règles) | Tests unitaires ; le score de lever de soleil reste expérimental jusqu'à sa vérification par les votes et Himawari |
+| Écrans | Weather, Beach, Sea, Sky, Overhead, Fire & smoke, Local news, Track record, Settings ; jour B et nuit A ; trois formats | Captures Playwright des 9 vues de jour et de nuit, sans erreur ni débordement ; axe ; Lighthouse |
+| Notifications | Web Push VAPID, choix par type, heures calmes, 3 par jour au plus | Test d'envoi depuis Settings après déploiement |
+| Archive | Prévisions et observations chaque heure dans Table Storage, matière du Track record en production | Après déploiement |
+| Infra | Bicep : identités, rôles ACR, stockage (clé partagée désactivée), Foundry gpt-6.1-sol (sans clé), Container App avec 3 secrets | `bicep build` et `bicep lint` 0.48.1 sans avertissement |
+| Livraison | Image Docker (serveur empaqueté, 242 Mo, utilisateur non root), workflow tests puis déploiement OIDC et vérification de la version servie | Image construite et lancée localement |
+
+### G.2 Ce qui reste à vérifier en production
+
+- Les sources bloquées par le réseau de cette session (Open-Meteo, adsb.lol, RFS, SWPC, Celestrak, Google News, aviationweather) : leur état apparaît dans `/health` dès le démarrage.
+- Le quota de gpt-6.1-sol sur l'abonnement.
+- La réception des notifications sur Android et iPhone (installée sur l'écran d'accueil).
+
+### G.3 Lots suivants
+
+1. Photos depuis un dossier OneDrive personnel (accès délégué, jeton en secret).
+2. Job de vérification nocturne sur l'archive : Track record glissant en production, correction apprise GFS + IFS réentraînée chaque nuit.
+3. Image satellite Himawari à l'écran et jugement du score de lever de soleil.
+4. Marégraphe à la minute pour valider les heures de marée.

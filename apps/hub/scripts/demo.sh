@@ -8,13 +8,13 @@ mkdir -p "$RUN"
 stop() { for f in "$RUN"/*.pid; do [ -f "$f" ] && kill "$(cat "$f")" 2>/dev/null || true; rm -f "$f"; done; }
 if [ "${1:-start}" = "stop" ]; then stop; exit 0; fi
 stop
-npx esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/index.js --packages=external --log-level=warning
+npm run build --silent
 npx tsx scripts/make-demo.mts 2026-11-14T03:00:00Z "$RUN/day.json" >/dev/null
 npx tsx scripts/make-demo.mts 2026-11-14T11:30:00Z "$RUN/night.json" >/dev/null
 for pair in day:8100 night:8101; do
   name=${pair%%:*}; port=${pair##*:}
   OFFLINE=1 DEMO_SNAPSHOT="$RUN/$name.json" APP_PASSWORD=test-family-password SESSION_SECRET=demo STATIC_DIR=../web/dist COOKIE_SECURE=0 PORT=$port \
-    nohup node dist/index.js > "$RUN/$name.log" 2>&1 &
+    nohup node dist/index.mjs > "$RUN/$name.log" 2>&1 &
   echo $! > "$RUN/$name.pid"
 done
 sleep 2

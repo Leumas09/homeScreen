@@ -158,6 +158,7 @@ th { color: var(--muted); font-weight: 600; }
 .kinds { border: 0; padding: 0; margin: 0; display: grid; gap: 2px; }
 .btn { font: inherit; font-weight: 700; border: 0; border-radius: 14px; padding: 12px 18px; min-height: 44px; background: var(--accent); color: #fff; cursor: pointer; }
 :root[data-theme="night"] .btn { color: #0b1016; }
+:root[data-theme="night"] .btn.ghost { color: var(--ink); }
 .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
 /* Écran ambiant la nuit : luminosité réduite pour ne pas éclairer la pièce */
 :root[data-ambient="dim"] body { filter: brightness(0.62); }
