@@ -16,6 +16,28 @@
       "pass": false
     },
     {
+      "name": "Wave height at the Sydney buoy",
+      "judge": "Observations, held-out period",
+      "target": "error below raw model",
+      "result": "no correction beats the raw model, raw kept",
+      "pass": false
+    },
+    {
+      "name": "High and low tide heights, 2025",
+      "judge": "IMOS ORS065 sensors, year held out",
+      "target": "within 10 cm",
+      "result": "3.0 cm on average, 90% within 5.5 cm",
+      "pass": true
+    },
+    {
+      "name": "High and low tide times, 2025",
+      "judge": "IMOS ORS065 sensors, year held out",
+      "target": "within 5 min",
+      "result": "14 min, but the sensor alone adds 14 min",
+      "pass": false,
+      "status": "untestable"
+    },
+    {
       "name": "Sun and Moon rise and set, 2027",
       "judge": "Skyfield + JPL DE421",
       "target": "within 30 s",
@@ -180,6 +202,82 @@
           "lead": 48,
           "raw": 1.474744267021383,
           "best": 1.2687787515159288
+        }
+      ]
+    },
+    {
+      "title": "Wave height at the Sydney buoy",
+      "unit": "m",
+      "best": "bias removed",
+      "gain": -0.003511143521760962,
+      "ci": [
+        -0.03905672736137784,
+        0.029861607748855438
+      ],
+      "target": 0.0,
+      "test": "2025-07-01 to 2026-07-02, 4019 forecasts",
+      "methods": [
+        {
+          "name": "Raw model (GFS)",
+          "mae": 0.23978105196488925
+        },
+        {
+          "name": "Bias removed",
+          "mae": 0.24062295765213682
+        },
+        {
+          "name": "Linear MOS",
+          "mae": 0.2445073608163284
+        },
+        {
+          "name": "Running bias (NOAA method)",
+          "mae": 0.24217799090960296
+        },
+        {
+          "name": "Learned correction",
+          "mae": 0.2550660064666504
+        }
+      ],
+      "leads": [
+        {
+          "lead": 6,
+          "raw": 0.234146541717392,
+          "best": 0.23019302891440074
+        },
+        {
+          "lead": 12,
+          "raw": 0.23683777304978193,
+          "best": 0.2363223303790115
+        },
+        {
+          "lead": 18,
+          "raw": 0.23623491218632925,
+          "best": 0.2382723187340989
+        },
+        {
+          "lead": 24,
+          "raw": 0.24289671040597638,
+          "best": 0.24412527263675657
+        },
+        {
+          "lead": 30,
+          "raw": 0.24274064725162953,
+          "best": 0.24350588407120694
+        },
+        {
+          "lead": 36,
+          "raw": 0.2413914106649464,
+          "best": 0.2443860210542186
+        },
+        {
+          "lead": 42,
+          "raw": 0.24058574765474894,
+          "best": 0.24230930130952616
+        },
+        {
+          "lead": 48,
+          "raw": 0.2435085797736399,
+          "best": 0.24601467913645114
         }
       ]
     }

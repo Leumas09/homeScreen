@@ -22,3 +22,15 @@ const times = { day: "2026-11-14T03:00:00Z", night: "2026-11-14T11:30:00Z" };
   await page.screenshot({ path: `${out}/tablet-track.png`, fullPage: true });
   await browser.close();
 })();
+// Vue marée
+(async () => {
+  const browser = await chromium.launch();
+  for (const [s, [w, h]] of [["tablet", [1280, 800]], ["phone", [390, 844]]]) {
+    const page = await browser.newPage({ viewport: { width: w, height: h } });
+    await page.goto(`${base}/?at=2026-11-14T03:00:00Z#tide`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `${out}/${s}-tide.png` });
+    await page.close();
+  }
+  await browser.close();
+})();

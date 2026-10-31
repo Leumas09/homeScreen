@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { longDate, pct, time } from "./lib/format";
 import type { SkyModel } from "./lib/sky-model";
+import { loadTide, tideNow, type TideTable } from "./lib/tide";
 import { Sky } from "./views/Sky";
+import { Tide } from "./views/Tide";
 import { TrackRecord } from "./views/TrackRecord";
 
-type View = "sky" | "track";
+type View = "sky" | "tide" | "track";
+const VIEWS: View[] = ["sky", "tide", "track"];
 
 /** `?at=2026-11-14T09:00:00Z` fige l'heure (captures et tests). */
 function startTime(): Date | null {
@@ -39,7 +42,10 @@ function useSky(now: Date): SkyModel | null {
 export function App() {
   const now = useNow();
   const sky = useSky(now);
-  const [view, setView] = useState<View>(() => (location.hash === "#track" ? "track" : "sky"));
+  const [view, setView] = useState<View>(() => VIEWS.find((v) => location.hash === `#${v}`) ?? "sky");
+  const [tide, setTide] = useState<TideTable | null>(null);
+  useEffect(() => { loadTide().then(setTide).catch(() => setTide(null)); }, []);
+  const tNow = tide ? tideNow(tide, now) : null;
 
   const night = sky?.isNight;
   useEffect(() => {
@@ -48,7 +54,7 @@ export function App() {
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", night ? "#0B1016" : "#EEF3F5");
   }, [night]);
 
-  const go = (v: View) => () => { setView(v); history.replaceState(null, "", v === "track" ? "#track" : "#"); };
+  const go = (v: View) => () => { setView(v); history.replaceState(null, "", v === "sky" ? location.pathname + location.search : `#${v}`); };
   const nextMoment = sky?.moments.find((m) => m.at >= now) ?? sky?.moments[0];
 
   return (
@@ -68,12 +74,17 @@ export function App() {
           <span className="value">{nextMoment ? time(nextMoment.at) : "n/a"}</span>
           <span className="sub">{nextMoment?.title ?? "Nothing in the next 24 h"}</span>
         </button>
+        <button className="tile" aria-current={view === "tide" ? "page" : undefined} onClick={go("tide")}>
+          <span className="label">{tNow ? (tNow.rising ? "Tide rising" : "Tide falling") : "Tide"}</span>
+          <span className="value">{tNow ? time(tNow.next.t) : "·"}</span>
+          <span className="sub">{tNow ? `${tNow.next.kind === "high" ? "High" : "Low"} ${tNow.next.h >= 0 ? "+" : "−"}${Math.abs(tNow.next.h).toFixed(1)} m` : "Loading"}</span>
+        </button>
         <button className="tile" aria-current={view === "track" ? "page" : undefined} onClick={go("track")}>
           <span className="label">Track record</span>
           <span className="value">How right?</span>
           <span className="sub">Forecasts vs reality</span>
         </button>
-        {["Weather", "Beach", "Sea", "Overhead"].map((name) => (
+        {["Weather", "Beach", "Overhead"].map((name) => (
           <button key={name} className="tile" aria-disabled="true" title="Coming with live data in phase 1">
             <span className="label">{name}</span>
             <span className="value" aria-hidden="true">·</span>
@@ -82,7 +93,10 @@ export function App() {
         ))}
       </nav>
       <div className="layout">
-        <main>{view === "track" ? <TrackRecord /> : sky ? <Sky s={sky} /> : <div className="card" style={{ minHeight: 320 }} aria-busy="true" />}</main>
+        <main>
+          {view === "track" ? <TrackRecord /> : view === "tide" ? <Tide table={tide} now={now} />
+            : sky ? <Sky s={sky} /> : <div className="card" style={{ minHeight: 320 }} aria-busy="true" />}
+        </main>
         <aside className="side card" aria-labelledby="next-title">
           <h2 id="next-title">Next 24 h</h2>
           <ul className="list">

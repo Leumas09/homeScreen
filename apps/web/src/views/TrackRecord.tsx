@@ -5,6 +5,7 @@ interface Check {
   target: string;
   result: string;
   pass: boolean;
+  status?: "untestable" | "missed";
   judge: string;
   detail?: string;
 }
@@ -66,7 +67,7 @@ export function TrackRecord() {
                   <td>{c.name}<div className="muted" style={{ fontSize: 12 }}>{c.judge}</div></td>
                   <td>{c.target}</td>
                   <td>{c.result}</td>
-                  <td><span className={`pill ${c.pass ? "good" : "miss"}`}>{c.pass ? "Met" : "Missed"}</span></td>
+                  <td><span className={`pill ${c.pass ? "good" : c.status === "untestable" ? "wait" : "miss"}`}>{c.pass ? "Met" : c.status === "untestable" ? "Not testable yet" : "Missed"}</span></td>
                 </tr>
               ))}
             </tbody>

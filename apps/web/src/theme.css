@@ -83,6 +83,7 @@ a { color: var(--accent); }
 .kv dd { margin: 0; font-weight: 700; text-align: right; }
 .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; }
 .pill.good { background: var(--good-bg); color: var(--good); }
+.pill.wait { background: var(--card-2); color: var(--muted); }
 .pill.miss { background: var(--warn-bg); color: var(--miss-ink); }
 .lede { font-size: 20px; font-weight: 600; line-height: 1.4; margin: 0; }
 .muted { color: var(--muted); }

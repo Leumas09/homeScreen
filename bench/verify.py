@@ -176,7 +176,7 @@ def evaluate(frame: pd.DataFrame, feats: list[str], split: str, label: str, ml_f
 
 def weather() -> list[dict]:
     obs = isd_obs([DATA / "raw/yssy_2024.csv", DATA / "raw/yssy_2025.csv"])
-    g = pd.read_parquet(DATA / "gfs_atmos_yssy.parquet")
+    g = pd.read_parquet(DATA / "gfs_atmos_yssy.parquet").reset_index(drop=True)
     lat, lon = -33.946, 151.177
     g["valid"] = g.init + pd.to_timedelta(g.lead_h, unit="h")
     g["t_raw"] = at_site(g, "t2m", lat, lon) - 273.15
@@ -221,7 +221,7 @@ def weather() -> list[dict]:
 
 def waves() -> list[dict]:
     obs = buoy_obs(DATA / "buoy_sydney.parquet")
-    g = pd.read_parquet(DATA / "gfs_wave_sydney.parquet")
+    g = pd.read_parquet(DATA / "gfs_wave_sydney.parquet").reset_index(drop=True)
     lat, lon = -33.77, 151.41
     g["valid"] = g.init + pd.to_timedelta(g.lead_h, unit="h")
     g["raw"] = at_site(g, "hs", lat, lon)
@@ -229,10 +229,14 @@ def waves() -> list[dict]:
     rad = np.deg2rad(at_site(g, "dp", lat, lon))
     g["dp_s"], g["dp_c"] = np.sin(rad), np.cos(rad)
     g = g.join(obs.rename(columns={"hs": "obs", "tp": "tp_obs"}), on="valid")
+    # Assimilation : dernière mesure de la bouée connue à l'émission, et écart du modèle à cet instant
+    g = g.join(obs.rename(columns={"hs": "hs_obs_init", "tp": "tp_obs_init"}), on="init")
+    g["lead_x_init"] = (g.hs_obs_init - g.raw) / (1 + g.lead_h / 12)
     for k in range(4):
         g[f"hs_{k}"] = g[f"hs_{k}"].fillna(g.raw)
-    return [evaluate(g, [f"hs_{k}" for k in range(4)] + ["tp_raw", "dp_s", "dp_c"], "2025-07-01",
-                     "Hauteur significative (m), bouée de Sydney")]
+    feats = [f"hs_{k}" for k in range(4)] + ["tp_raw", "dp_s", "dp_c"]
+    return [evaluate(g, feats, "2025-07-01", "Hauteur significative (m), bouée de Sydney",
+                     ml_feats=feats + ["hs_obs_init", "tp_obs_init", "lead_x_init"])]
 
 
 if __name__ == "__main__":

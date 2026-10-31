@@ -41,9 +41,20 @@ def main() -> None:
         checks.append({
             "name": v["title"], "judge": "Observations, held-out period",
             "target": f"error −{v['target']*100:.0f}% vs raw" if v["target"] else "error below raw model",
-            "result": f"−{v['gain']*100:.1f}% (95%: {v['ci'][0]*100:.1f} to {v['ci'][1]*100:.1f})",
+            "result": (f"−{v['gain']*100:.1f}% (95%: {v['ci'][0]*100:.1f} to {v['ci'][1]*100:.1f})" if v["gain"] > 0
+                       else "no correction beats the raw model, raw kept"),
             "pass": bool(pass_),
         })
+    tide = RES / "tide_vs_ors065.json"
+    if tide.exists():
+        t = json.loads(tide.read_text())
+        floor = t.get("judge_floor", {}).get("time_mae_min")
+        checks.append({"name": "High and low tide heights, 2025", "judge": "IMOS ORS065 sensors, year held out",
+                       "target": "within 10 cm", "result": f"{t['height_mae_cm']:.1f} cm on average, 90% within {t['height_p90_cm']:.1f} cm",
+                       "pass": t["height_mae_cm"] < 10})
+        checks.append({"name": "High and low tide times, 2025", "judge": "IMOS ORS065 sensors, year held out",
+                       "target": "within 5 min", "result": f"{t['time_mae_min']:.0f} min, but the sensor alone adds {floor:.0f} min" if floor else f"{t['time_mae_min']:.0f} min",
+                       "pass": False, "status": "untestable" if floor and floor > 5 else "missed"})
     sky = RES / "sky_vs_skyfield.json"
     if sky.exists():
         s = json.loads(sky.read_text())
