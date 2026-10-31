@@ -164,7 +164,7 @@ describe("lever de soleil, aurore, moments, brief, modèle", () => {
   });
   it("brief par règles quand le modèle est absent", () => {
     expect(ruleBrief({ localTime: "", moments: [{ title: "Moonrise over the sea at 19:34", detail: "" }], weather: { now: "clear", tempC: 22, feelsC: 21, windKmh: 10, windFrom: 270, maxToday: 26, rainChanceToday: 0 } }))
-      .toBe("Clear, 22°C, up to 26°C, moonrise over the sea at 19:34.");
+      .toBe("Clear, 22°C, up to 26°C. Moonrise over the sea at 19:34.");
   });
   it("API Responses : texte de sortie", () => {
     expect(outputText({ output: [{ type: "reasoning" }, { type: "message", content: [{ type: "output_text", text: "Hi" }] }] })).toBe("Hi");

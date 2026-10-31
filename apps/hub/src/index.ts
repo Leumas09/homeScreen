@@ -69,6 +69,15 @@ const collectors: Collector[] = [
 ];
 startCollectors(store, collectors, { offline: cfg.offline });
 
+// Mode démonstration : uniquement hors ligne, pour les tests de bout en bout et les captures.
+const demoPath = process.env.DEMO_SNAPSHOT;
+if (cfg.offline && demoPath) {
+  const { readFileSync } = await import("node:fs");
+  const demo = JSON.parse(readFileSync(demoPath, "utf8")) as Record<string, unknown>;
+  store.demo = true;
+  for (const [id, d] of Object.entries(demo)) store.success(id, d);
+}
+
 // Archive horaire (Table Storage), première écriture 5 minutes après le démarrage.
 const archive = table(cfg.tableEndpoint, "archive", cfg.managedIdentityClientId);
 if (archive && !cfg.offline) {

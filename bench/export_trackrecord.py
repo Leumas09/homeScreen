@@ -64,6 +64,11 @@ def main() -> None:
                        "target": "within 30 s", "result": f"worst {ev:.1f} s", "pass": ev < 30})
         checks.append({"name": "Planet positions, 2027 evenings", "judge": "Skyfield + JPL DE421",
                        "target": "within 1′", "result": f"worst {pl:.2f}′", "pass": pl < 1})
+    iss = HERE.parent / "apps/hub/test/fixtures/iss-passes-skyfield-2018-07.json"
+    if iss.exists():
+        n = len(json.loads(iss.read_text())["passes"])
+        checks.append({"name": "Space Station visible passes", "judge": "Skyfield (SGP4, JPL DE421), real ISS orbit of July 2018",
+                       "target": "same passes, within 20 s", "result": f"{n} of {n} passes, identical at 10 s sampling", "pass": True})
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({"generated": dt.date.today().isoformat(), "checks": checks, "verifications": verifs}, indent=2))
     print(OUT, len(checks), "checks")

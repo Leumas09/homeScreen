@@ -18,6 +18,8 @@ export class Store {
   private entries = new Map<string, Entry>();
   private listeners = new Set<Listener>();
   version = 0;
+  /** Données de démonstration (tests et captures uniquement) : l'écran l'affiche clairement. */
+  demo = false;
 
   register(id: string, staleAfterMs: number) {
     if (!this.entries.has(id)) {
@@ -48,8 +50,8 @@ export class Store {
     this.emit(id, next);
   }
 
-  snapshot(): { version: number; sources: Record<string, Entry> } {
-    return { version: this.version, sources: Object.fromEntries(this.entries) };
+  snapshot(): { version: number; demo?: boolean; sources: Record<string, Entry> } {
+    return { version: this.version, ...(this.demo ? { demo: true } : {}), sources: Object.fromEntries(this.entries) };
   }
 
   health(now = Date.now()) {

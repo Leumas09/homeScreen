@@ -30,13 +30,13 @@ export function createApp(cfg: Config, store: Store, deps: { push?: Push } = {})
     c.header(
       "Content-Security-Policy",
       "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; " +
-        "font-src 'self'; connect-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+        "font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
     );
   });
 
   // Public : santé (sans donnée), page de connexion, icône et service worker.
   app.get("/health", (c) => c.json({ status: "ok", version: cfg.version, sources: store.health() }));
-  app.get("/icon.svg", serveStatic({ root: cfg.staticDir }));
+  for (const f of ["/icon.svg", "/icon-192.png", "/icon-512.png", "/manifest.webmanifest"]) app.get(f, serveStatic({ root: cfg.staticDir }));
   app.get("/login", (c) => c.html(loginPage({ next: c.req.query("next") })));
 
   app.post("/login", async (c) => {

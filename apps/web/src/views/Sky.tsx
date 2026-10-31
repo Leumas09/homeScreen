@@ -1,4 +1,7 @@
+import type { Iss, SourceEntry, SpaceWeather, Sunrise } from "@maroubra/core";
+import { Fresh } from "../components/bits";
 import { HorizonChart } from "../components/HorizonChart";
+import { auroraText } from "./FireAir";
 import { compass, duration, pct, shortDate, time } from "../lib/format";
 import type { SkyModel } from "../lib/sky-model";
 
@@ -15,7 +18,11 @@ function lede(s: SkyModel): string {
   return text.charAt(0).toUpperCase() + text.slice(1) + ".";
 }
 
-export function Sky({ s }: { s: SkyModel }) {
+type E<T> = (SourceEntry<T> & { stale: boolean; ageMin: number | null }) | null;
+
+export function Sky({ s, iss, space, sunrise }: { s: SkyModel; iss?: E<Iss>; space?: E<SpaceWeather>; sunrise?: E<Sunrise> }) {
+  const passes = iss?.data?.passes.filter((p) => Date.parse(p.end) > s.now.getTime()).slice(0, 4) ?? [];
+  const sr = sunrise?.data;
   return (
     <section aria-labelledby="sky-title" className="layout-main" style={{ display: "grid", gap: 16 }}>
       <div className="card">
@@ -67,6 +74,32 @@ export function Sky({ s }: { s: SkyModel }) {
               ))}
             </ul>
           ) : <p className="muted" style={{ margin: 0 }}>No bright planet above 10° at that time.</p>}
+        </div>
+        <div className="card">
+          <div className="card-head"><h2>Sunrise {sr ? shortDate(new Date(sr.time)) : ""}</h2><Fresh e={sunrise ?? null} label="Forecast" /></div>
+          {sr ? (
+            <>
+              <div className="big">{sr.score.toFixed(1)}<span className="muted" style={{ fontSize: 16 }}> / 10</span></div>
+              <p className="sub" style={{ margin: "4px 0 8px" }}>{sr.label}, {time(new Date(sr.time))}</p>
+              <p style={{ margin: 0 }}>{sr.why}.</p>
+              <p className="note">Experimental score from the cloud forecast along the sun's path over the sea. Being checked against real sunrises.</p>
+            </>
+          ) : <p className="muted" style={{ margin: 0 }}>No sunrise forecast yet.</p>}
+        </div>
+        <div className="card">
+          <div className="card-head"><h2>Space Station</h2><Fresh e={iss ?? null} label="Orbit" /></div>
+          {passes.length ? (
+            <ul className="list">
+              {passes.map((p) => (
+                <li key={p.start}><span className="when">{time(new Date(p.start))}</span><span>{shortDate(new Date(p.start))}, {compass(p.startAz)} to {compass(p.endAz)}, up to {p.maxAlt}° high, {p.durationMin} min</span></li>
+              ))}
+            </ul>
+          ) : <p className="muted" style={{ margin: 0 }}>No visible pass in the next three days.</p>}
+          <p className="note">A bright, steady, moving star. Visible only when it is lit by the sun and our sky is dark.</p>
+        </div>
+        <div className="card">
+          <div className="card-head"><h2>Aurora australis</h2><Fresh e={space ?? null} /></div>
+          <p style={{ margin: 0, lineHeight: 1.5 }}>{auroraText(space?.data ?? null)}</p>
         </div>
         <div className="card">
           <h2>Moonrise over the sea, next 30 days</h2>

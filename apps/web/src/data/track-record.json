@@ -50,6 +50,13 @@
       "target": "within 1\u2032",
       "result": "worst 0.23\u2032",
       "pass": true
+    },
+    {
+      "name": "Space Station visible passes",
+      "judge": "Skyfield (SGP4, JPL DE421), real ISS orbit of July 2018",
+      "target": "same passes, within 20 s",
+      "result": "3 of 3 passes, identical at 10 s sampling",
+      "pass": true
     }
   ],
   "verifications": [

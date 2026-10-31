@@ -15,10 +15,12 @@ const WMO: Record<number, string> = { 0: "clear", 1: "mostly clear", 2: "partly 
 export const describe = (code: number) => WMO[code] ?? "changeable";
 
 export function facts(w: Weather | null, b: Beach | null, tideNext: string | null, ms: Moment[], now = new Date()): BriefFacts {
+  const localDay = (t: number) => new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney" }).format(t);
+  const today = w?.daily.find((d) => localDay(d.t * 1000) === localDay(now.getTime())) ?? w?.daily[0];
   const hm = (d: number) => new Intl.DateTimeFormat("en-AU", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Australia/Sydney" }).format(d);
   return {
     localTime: new Intl.DateTimeFormat("en-AU", { weekday: "long", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Australia/Sydney" }).format(now),
-    weather: w ? { now: describe(w.current.code), tempC: Math.round(w.current.temp), feelsC: Math.round(w.current.feels), windKmh: Math.round(w.current.wind), windFrom: Math.round(w.current.windDir), maxToday: Math.round(w.daily[1]?.max ?? w.daily[0]?.max ?? w.current.temp), rainChanceToday: w.daily[1]?.pop ?? null } : null,
+    weather: w ? { now: describe(w.current.code), tempC: Math.round(w.current.temp), feelsC: Math.round(w.current.feels), windKmh: Math.round(w.current.wind), windFrom: Math.round(w.current.windDir), maxToday: Math.round(today?.max ?? w.current.temp), rainChanceToday: today?.pop ?? null } : null,
     beach: b ? { score: b.score, label: b.label, best: b.best ? `${hm(b.best.start * 1000)} to ${hm(b.best.end * 1000)} (${b.best.score}/10)` : null, sea: b.sea.label, waterC: b.waterTemp == null ? null : Math.round(b.waterTemp) } : null,
     tide: tideNext ? { next: tideNext } : null,
     moments: ms.slice(0, 4).map((m) => ({ title: m.title, detail: m.detail })),
@@ -28,9 +30,9 @@ export function facts(w: Weather | null, b: Beach | null, tideNext: string | nul
 export function ruleBrief(f: BriefFacts): string {
   const parts: string[] = [];
   if (f.weather) parts.push(`${f.weather.now[0].toUpperCase()}${f.weather.now.slice(1)}, ${f.weather.tempC}°C, up to ${f.weather.maxToday}°C`);
-  if (f.beach) parts.push(f.beach.best && f.beach.score >= 5 ? `best swim ${f.beach.best}` : `beach ${f.beach.label.toLowerCase()} (${f.beach.sea.toLowerCase()} sea)`);
-  if (f.moments[0]) parts.push(f.moments[0].title.charAt(0).toLowerCase() + f.moments[0].title.slice(1));
-  return parts.length ? `${parts.join(", ")}.` : "";
+  if (f.beach) parts.push(f.beach.best && f.beach.score >= 5 ? `Best swim ${f.beach.best}` : `Beach ${f.beach.label.toLowerCase()}, ${f.beach.sea.toLowerCase()} sea`);
+  if (f.moments[0]) parts.push(f.moments[0].title);
+  return parts.map((x) => `${x}.`).join(" ");
 }
 
 const INSTRUCTIONS =
