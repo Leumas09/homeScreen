@@ -356,7 +356,53 @@ Les vrais chiffres sont publiés, même s'ils manquent la cible.
 
 ### E.4 Prochaine étape
 
-Le plus haut barreau que je peux finir et vérifier avec les accès actuels est la **phase 0**. Elle demande ton accord, puisqu'elle crée un dépôt et des ressources Azure, avec un what-if à valider. Dès tes réponses à E.2, je prépare le Bicep et le job de spike des sources, je lance le what-if, et je t'envoie le résumé avant tout déploiement.
+Voir la partie F : le banc et les premiers écrans sont faits. La suite (phase 0 Azure) demande toujours tes réponses à E.2 et ton OK sur un what-if.
+
+---
+
+## Partie F : avancement au 31 octobre 2026
+
+Fait dans cette session, sans Azure et sans aucune clé, en partant des données brutes. Chaque résultat a un juge extérieur et une période jamais vue à l'apprentissage. Les objectifs manqués restent affichés.
+
+### F.1 Résultats du banc (`bench/`)
+
+| Contrôle | Objectif | Résultat | Juge | Verdict |
+|---|---|---|---|---|
+| Température à l'aéroport, échéances 6 à 48 h | −25 % d'erreur contre le modèle brut | **−34,3 %** (IC 95 % : 29,4 à 38,9) | Observations YSSY (NOAA ISD), février à août 2025 | Atteint |
+| Vent à l'aéroport | −25 % | **−15,9 %** (IC 95 % : 12,6 à 19,1) | Idem | Manqué |
+| Houle à la bouée de Sydney | Mieux que le modèle brut | Aucune correction ne fait mieux ; GFS-Wave brut (24 cm d'erreur) est sans biais | Bouée MHL, juillet 2025 à juin 2026 | Manqué, modèle brut gardé |
+| Hauteurs des pleines et basses mers | ±10 cm | **3,0 cm** en moyenne, 90 % sous 5,5 cm | Capteurs IMOS ORS065, année 2025 | Atteint |
+| Heures des pleines et basses mers | ±5 min | 14 min, **égal au bruit du juge seul** (14 min) | Idem | Non vérifiable avec ce capteur |
+| Levers et couchers Soleil et Lune, 2027 | ±30 s | **2,1 s** au pire | Skyfield + JPL DE421 | Atteint |
+| Planètes le soir, 2027 | 1′ | **0,23′** au pire | Skyfield + JPL DE421 | Atteint |
+| Premier affichage (ordinateur, wifi) | < 1 s | **0,4 s**, performance 100 | Lighthouse | Atteint |
+| Premier affichage (mobile, 4G lente simulée) | < 1 s | 1,2 s, performance 100, blocage 0 ms | Lighthouse | Manqué de peu |
+| Accessibilité, jour et nuit | 0 défaut | 0 violation (axe), 100 (Lighthouse) | axe-core | Atteint |
+
+Méthode météo : six variantes comparées à chaque échéance (modèle brut GFS, IFS brut, moyenne GFS et IFS, biais retiré, MOS linéaire, biais décroissant de la NOAA, correction apprise par gradient boosting). La meilleure est la correction apprise qui combine **GFS et IFS**, les 4 points de grille et la dernière observation connue à l'émission. Par transparence : la configuration de la température a été évaluée 3 fois sur la période test, et celle du vent 4 fois. Chaque choix de variables était fixé avant de regarder le résultat.
+
+### F.2 Ce que le banc a appris (et qui change le plan)
+
+- **Beaucoup de sources n'ont besoin d'aucune clé.** Elles sont sur AWS Open Data et lisibles depuis Azure : modèle GFS et vagues (`noaa-gfs-bdp-pds`), modèle européen IFS (`ecmwf-forecasts`), observations horaires de l'aéroport (`noaa-global-hourly-pds`), bouée de Sydney en quasi temps réel et mouillages IMOS (`aodn-cloud-optimised`), images Himawari-9 toutes les 10 min (`noaa-himawari9`). Elles remplacent avantageusement Open-Meteo pour la vérification, et le complètent pour l'affichage.
+- **La marée se calcule sans API** : analyse harmonique de 20 ans de mesures du mouillage ORS065, à 7 km. WorldTides et toute autre clé sont inutiles. Reste à valider les heures contre un marégraphe à la minute (MHL ou BOM, Port Botany), depuis Azure.
+- **Il ne faut pas corriger la houle.** Le modèle brut est sans biais, son erreur est d'ordre spatial (maille de 25 km contre bouée ponctuelle). Pour progresser, il faudra un modèle de vagues côtier plus fin, ou afficher la bouée elle-même pour l'état actuel.
+- **Le vent est limité par la résolution des modèles globaux.** La prochaine piste sérieuse est un modèle régional (BOM ACCESS-C 1,5 km, via Open-Meteo depuis Azure) ajouté au mélange appris.
+- **Le premier affichage dépend de la coquille statique et du Web Worker**, pas du framework. Le calcul du ciel tourne hors du fil principal, la feuille de style est intégrée.
+
+### F.3 Ce qui tourne dans l'app (`apps/web`)
+
+- Vue **Sky** : panorama face au nord (le Soleil de Maroubra passe au nord, la mer est à droite), trajectoires sur 24 h, Lune, nuit noire, planètes, levers de Lune sur la mer à 30 jours.
+- Vue **Tide** : marée calculée localement, courbe sur 30 h, prochaines pleines et basses mers, avec la méthode et ses limites expliquées.
+- Vue **Track record** : les tableaux de F.1, en anglais pour la famille.
+- Thème Jour (direction B) ou Nuit (direction A) selon la vraie hauteur du Soleil, trois formats, panneau « Next 24 h » sur grand écran.
+- Images Himawari-9 de Sydney : pipeline validé dans `bench/himawari_sydney.py`, pas encore à l'écran.
+
+### F.4 Suite proposée, dans l'ordre
+
+1. **Phase 0 Azure** (ton OK nécessaire) : dépôt `app-maroubra`, Bicep, déploiement de l'app actuelle, job quotidien qui régénère la table des marées et le Track record à partir des archives AWS.
+2. **Bouée et marégraphe en direct** depuis Azure : état de la mer mesuré, et validation des heures de marée à la minute.
+3. **Correction apprise en production** : archiver chaque prévision émise dès le jour 1, réentraîner chaque nuit, publier les scores glissants.
+4. **ACCESS-C pour le vent**, puis image satellite et score de lever de soleil, jugés par la couverture nuageuse Himawari à l'heure du lever.
 
 ---
 

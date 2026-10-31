@@ -29,9 +29,10 @@ const verifications = data.verifications as Verification[];
 
 function LeadChart({ v }: { v: Verification }) {
   const W = 520, H = 180, P = 34;
-  const max = Math.max(...v.leads.map((l) => l.raw)) * 1.15;
+  const all = v.leads.flatMap((l) => [l.raw, l.best]);
+  const lo = Math.min(...all) * 0.85, hi = Math.max(...all) * 1.08;
   const xs = (i: number) => P + (i / (v.leads.length - 1)) * (W - 2 * P);
-  const ys = (e: number) => H - 24 - (e / max) * (H - 44);
+  const ys = (e: number) => H - 24 - ((e - lo) / (hi - lo)) * (H - 44);
   const line = (k: "raw" | "best") => v.leads.map((l, i) => `${i ? "L" : "M"}${xs(i)},${ys(l[k])}`).join(" ");
   return (
     <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img"
@@ -78,10 +79,19 @@ export function TrackRecord() {
         {verifications.map((v) => (
           <div className="card" key={v.title}>
             <h2>{v.title}</h2>
-            <div className="big">{v.gain > 0 ? "−" : "+"}{Math.abs(v.gain * 100).toFixed(1)}%</div>
-            <p className="sub" style={{ margin: "4px 0 12px" }}>
-              error vs raw model ({v.best}), 95% interval {(v.ci[0] * 100).toFixed(1)} to {(v.ci[1] * 100).toFixed(1)}%. Target −{v.target * 100}%.
-            </p>
+            {v.gain > 0 ? (
+              <>
+                <div className="big">−{(v.gain * 100).toFixed(1)}%</div>
+                <p className="sub" style={{ margin: "4px 0 12px" }}>
+                  error vs raw model ({v.best}), 95% interval {(v.ci[0] * 100).toFixed(1)} to {(v.ci[1] * 100).toFixed(1)}%. Target −{v.target * 100}%.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="big">Raw model kept</div>
+                <p className="sub" style={{ margin: "4px 0 12px" }}>No correction beat the raw model on the held-out year: it is unbiased here, so the screen uses it as is.</p>
+              </>
+            )}
             <LeadChart v={v} />
             <table style={{ marginTop: 8 }}>
               <thead><tr><th scope="col">Method</th><th scope="col">Mean error ({v.unit})</th></tr></thead>
