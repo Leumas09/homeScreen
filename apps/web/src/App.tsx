@@ -139,16 +139,15 @@ export function App() {
         {tile("overhead", "Overhead", f ? `${f.aircraft.filter((a) => !a.onGround).length}` : "·", overheadNext ? `${overheadNext.callsign ?? overheadNext.type} in ${overheadNext.overhead!.inMin} min` : f ? "aircraft nearby" : "Loading", { stale: flights?.stale && !!f })}
         {tile("fire", "Fire & smoke", fires?.data ? `${activeFires.length}` : "·", fires?.data ? (urgentFire ? "Check alerts" : activeFires.length ? "within 200 km" : "No fires nearby") : "Loading", { alert: urgentFire })}
         {tile("news", "Local news", news?.data ? `${news.data.items.length}` : "·", "Randwick, Maroubra")}
-        {tile("track", "Track record", "How right?", "Forecasts vs reality")}
+        {tile("track", "Track record", "Scores", "Forecasts vs reality")}
       </nav>
 
-      {(isDemo(snap) || brief || (snap && !connected)) && (
-        <div className="brief" role="status">
-          {isDemo(snap) && <span className="pill miss">Sample data for testing, not live</span>}
-          {snap && !connected && <span className="pill wait">Reconnecting…</span>}
-          {brief && <span>{brief.text}</span>}
-        </div>
-      )}
+      {/* Toujours présent, hauteur réservée : l'arrivée des données ne décale pas la page. */}
+      <div className="brief" role="status">
+        {isDemo(snap) && <span className="pill miss">Sample data for testing, not live</span>}
+        {snap && !connected && <span className="pill wait">Reconnecting…</span>}
+        <span className={brief ? undefined : "muted"}>{brief?.text ?? "Reading the sky and the sea…"}</span>
+      </div>
 
       <div className="layout">
         <main>

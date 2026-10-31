@@ -1,5 +1,6 @@
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono, type Context } from "hono";
+import { compress } from "hono/compress";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { streamSSE } from "hono/streaming";
 import { existsSync, readFileSync } from "node:fs";
@@ -34,9 +35,13 @@ export function createApp(cfg: Config, store: Store, deps: { push?: Push } = {})
     );
   });
 
+  // Compression gzip des réponses, sauf le flux temps réel (qui doit partir sans tampon).
+  const gzip = compress();
+  app.use("*", (c, next) => (c.req.path === "/api/stream" ? next() : gzip(c, next)));
+
   // Public : santé (sans donnée), page de connexion, icône et service worker.
   app.get("/health", (c) => c.json({ status: "ok", version: cfg.version, sources: store.health() }));
-  for (const f of ["/icon.svg", "/icon-192.png", "/icon-512.png", "/manifest.webmanifest"]) app.get(f, serveStatic({ root: cfg.staticDir }));
+  for (const f of ["/icon.svg", "/icon-192.png", "/icon-512.png", "/manifest.webmanifest", "/sw.js"]) app.get(f, serveStatic({ root: cfg.staticDir }));
   app.get("/login", (c) => c.html(loginPage({ next: c.req.query("next") })));
 
   app.post("/login", async (c) => {
