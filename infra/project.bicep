@@ -9,10 +9,9 @@ param tags object
 param containerImage string
 param environmentId string
 param registryServer string
-param runIdentityId string
-param runClientId string
-param ciPrincipalId string
-param tableEndpoint string
+param runIdentityName string
+param ciIdentityName string
+param storageName string
 param foundryEndpoint string
 param foundryDeployment string
 @secure()
@@ -23,6 +22,20 @@ param vapidPublicKey string
 @secure()
 param vapidPrivateKey string
 param vapidSubject string
+
+// Identités et stockage lus par `existing` : un paramètre de module calculé à l'exécution court-circuite le what-if.
+// Learn : https://learn.microsoft.com/azure/azure-resource-manager/bicep/linter-rule-what-if-short-circuiting
+resource runIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' existing = {
+  name: runIdentityName
+}
+
+resource ciIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' existing = {
+  name: ciIdentityName
+}
+
+resource storage 'Microsoft.Storage/storageAccounts@2026-06-01' existing = {
+  name: storageName
+}
 
 var containerAppsContributor = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '358470bc-b998-42bd-ab17-a7e34c199c0f')
 // L'image de démonstration écoute sur le port 80, l'app sur 8080.
@@ -35,7 +48,7 @@ resource app 'Microsoft.App/containerApps@2026-07-01' = {
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${runIdentityId}': {}
+      '${runIdentity.id}': {}
     }
   }
   properties: {
@@ -52,7 +65,7 @@ resource app 'Microsoft.App/containerApps@2026-07-01' = {
       registries: [
         {
           server: registryServer
-          identity: runIdentityId
+          identity: runIdentity.id
         }
       ]
       secrets: [
@@ -77,8 +90,8 @@ resource app 'Microsoft.App/containerApps@2026-07-01' = {
             { name: 'VAPID_PRIVATE_KEY', secretRef: 'vapid-private-key' }
             { name: 'VAPID_PUBLIC_KEY', value: vapidPublicKey }
             { name: 'VAPID_SUBJECT', value: vapidSubject }
-            { name: 'AZURE_CLIENT_ID', value: runClientId }
-            { name: 'TABLE_ENDPOINT', value: tableEndpoint }
+            { name: 'AZURE_CLIENT_ID', value: runIdentity.properties.clientId }
+            { name: 'TABLE_ENDPOINT', value: storage.properties.primaryEndpoints.table }
             { name: 'FOUNDRY_ENDPOINT', value: foundryEndpoint }
             { name: 'FOUNDRY_DEPLOYMENT', value: foundryDeployment }
           ]
@@ -111,7 +124,7 @@ resource ciAppRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(app.id, 'id-${name}-ci', containerAppsContributor)
   properties: {
     roleDefinitionId: containerAppsContributor
-    principalId: ciPrincipalId
+    principalId: ciIdentity.properties.principalId
     principalType: 'ServicePrincipal'
     description: 'CI ${name} : mise à jour de la Container App'
   }

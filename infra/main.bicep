@@ -59,8 +59,18 @@ var tags = {
   project: name
 }
 
+// Noms calculés ici, connus avant le déploiement : les modules lisent les identités et le stockage par `existing`
+// au lieu de recevoir des sorties d'autres modules, qui court-circuiteraient le what-if.
+// Learn : https://learn.microsoft.com/azure/azure-resource-manager/bicep/linter-rule-what-if-short-circuiting
+var rgName = 'rg-app-${name}'
+var runIdentityName = 'id-${name}-run'
+var ciIdentityName = 'id-${name}-ci'
+var storageName = take('st${name}${uniqueString(rg.id)}', 24)
+var aiAccountName = 'ai-${name}-${uniqueString(rg.id)}'
+var modelName = 'gpt-6.1-sol'
+
 resource rg 'Microsoft.Resources/resourceGroups@2025-04-01' = {
-  name: 'rg-app-${name}'
+  name: rgName
   location: location
   tags: tags
 }
@@ -82,12 +92,14 @@ module acrRoles 'acr-roles.bicep' = {
   scope: resourceGroup(platform.resourceGroup)
   params: {
     registryName: platform.registry
-    runPrincipalId: identities.outputs.runPrincipalId
-    ciPrincipalId: identities.outputs.ciPrincipalId
-    runIdentityId: resourceId(subscription().subscriptionId, rg.name, 'Microsoft.ManagedIdentity/userAssignedIdentities', 'id-${name}-run')
-    ciIdentityId: resourceId(subscription().subscriptionId, rg.name, 'Microsoft.ManagedIdentity/userAssignedIdentities', 'id-${name}-ci')
+    identityResourceGroup: rgName
+    runIdentityName: runIdentityName
+    ciIdentityName: ciIdentityName
     projectName: name
   }
+  dependsOn: [
+    identities
+  ]
 }
 
 module data 'data.bicep' = {
@@ -97,9 +109,12 @@ module data 'data.bicep' = {
     name: name
     location: location
     tags: tags
-    runPrincipalId: identities.outputs.runPrincipalId
-    runIdentityId: resourceId(subscription().subscriptionId, rg.name, 'Microsoft.ManagedIdentity/userAssignedIdentities', 'id-${name}-run')
+    storageName: storageName
+    runIdentityName: runIdentityName
   }
+  dependsOn: [
+    identities
+  ]
 }
 
 module ai 'ai.bicep' = {
@@ -109,10 +124,14 @@ module ai 'ai.bicep' = {
     name: name
     location: location
     tags: tags
-    runPrincipalId: identities.outputs.runPrincipalId
-    runIdentityId: resourceId(subscription().subscriptionId, rg.name, 'Microsoft.ManagedIdentity/userAssignedIdentities', 'id-${name}-run')
+    accountName: aiAccountName
+    runIdentityName: runIdentityName
+    modelName: modelName
     modelCapacity: modelCapacity
   }
+  dependsOn: [
+    identities
+  ]
 }
 
 module project 'project.bicep' = {
@@ -125,12 +144,11 @@ module project 'project.bicep' = {
     containerImage: containerImage
     environmentId: resourceId(subscription().subscriptionId, platform.resourceGroup, 'Microsoft.App/managedEnvironments', platform.environment)
     registryServer: '${platform.registry}${environment().suffixes.acrLoginServer}'
-    runIdentityId: identities.outputs.runIdentityId
-    runClientId: identities.outputs.runClientId
-    ciPrincipalId: identities.outputs.ciPrincipalId
-    tableEndpoint: data.outputs.tableEndpoint
-    foundryEndpoint: ai.outputs.endpoint
-    foundryDeployment: ai.outputs.deploymentName
+    runIdentityName: runIdentityName
+    ciIdentityName: ciIdentityName
+    storageName: storageName
+    foundryEndpoint: 'https://${aiAccountName}.openai.azure.com'
+    foundryDeployment: modelName
     appPassword: appPassword
     sessionSecret: sessionSecret
     vapidPublicKey: vapidPublicKey
@@ -139,6 +157,8 @@ module project 'project.bicep' = {
   }
   dependsOn: [
     acrRoles
+    data
+    ai
   ]
 }
 

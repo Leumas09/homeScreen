@@ -12,8 +12,8 @@
 param name string
 param location string
 param tags object
-param runPrincipalId string
-param runIdentityId string
+param accountName string
+param runIdentityName string
 param modelName string = 'gpt-6.1-sol'
 param modelVersion string = '2026-09-29'
 @description('Type de déploiement : DataZoneStandard (quota libre) ou GlobalStandard (quota partagé de la souscription).')
@@ -24,7 +24,11 @@ param modelCapacity int = 20
 
 // Cognitive Services OpenAI User
 var openAiUser = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd')
-var accountName = 'ai-${name}-${uniqueString(resourceGroup().id)}'
+
+// Identité lue par `existing` : un paramètre de module calculé à l'exécution court-circuite le what-if.
+resource runIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' existing = {
+  name: runIdentityName
+}
 
 resource account 'Microsoft.CognitiveServices/accounts@2026-09-01' = {
   name: accountName
@@ -59,14 +63,11 @@ resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2026-09-01
 
 resource runOpenAi 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: account
-  name: guid(account.id, runIdentityId, openAiUser)
+  name: guid(account.id, runIdentity.id, openAiUser)
   properties: {
     roleDefinitionId: openAiUser
-    principalId: runPrincipalId
+    principalId: runIdentity.properties.principalId
     principalType: 'ServicePrincipal'
     description: 'project=${name} : appel du modèle'
   }
 }
-
-output endpoint string = 'https://${accountName}.openai.azure.com'
-output deploymentName string = deployment.name

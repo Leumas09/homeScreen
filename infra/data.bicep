@@ -4,14 +4,19 @@
 param name string
 param location string
 param tags object
-param runPrincipalId string
-param runIdentityId string
+param storageName string
+param runIdentityName string
 
 // Storage Table Data Contributor (Learn : https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/storage#storage-table-data-contributor)
 var tableDataContributor = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3')
 
+// Identité lue par `existing` : un paramètre de module calculé à l'exécution court-circuite le what-if.
+resource runIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' existing = {
+  name: runIdentityName
+}
+
 resource storage 'Microsoft.Storage/storageAccounts@2026-06-01' = {
-  name: take('st${name}${uniqueString(resourceGroup().id)}', 24)
+  name: storageName
   location: location
   tags: tags
   kind: 'StorageV2'
@@ -45,13 +50,11 @@ resource storage 'Microsoft.Storage/storageAccounts@2026-06-01' = {
 
 resource runTables 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: storage
-  name: guid(storage.id, runIdentityId, tableDataContributor)
+  name: guid(storage.id, runIdentity.id, tableDataContributor)
   properties: {
     roleDefinitionId: tableDataContributor
-    principalId: runPrincipalId
+    principalId: runIdentity.properties.principalId
     principalType: 'ServicePrincipal'
     description: 'project=${name} : lecture et écriture des tables'
   }
 }
-
-output tableEndpoint string = storage.properties.primaryEndpoints.table
