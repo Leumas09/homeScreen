@@ -238,7 +238,7 @@ flowchart LR
 | Vérification, MOS, harmoniques | Un job Container Apps planifié (cron en UTC), facturé seulement pendant l'exécution. | [Jobs in Azure Container Apps](https://learn.microsoft.com/azure/container-apps/jobs#job-trigger-types) |
 | Historique et archive | Compte de stockage : Tables pour les séries et l'archive des prévisions, Blob pour PMTiles, vignettes Himawari et cache photos. `allowSharedKeyAccess: false`, accès par `id-maroubra-run` avec les rôles Storage Table Data Contributor et Storage Blob Data Contributor. | [Prevent Shared Key authorization](https://learn.microsoft.com/azure/storage/common/shared-key-authorization-prevent) |
 | Connexion de la famille | **Décision du 31/10 : mot de passe familial partagé**, données publiques donc sécurité volontairement simple. Mot de passe en secret de la Container App, comparaison à temps constant, cookie signé HttpOnly (400 jours si « Keep me signed in »), limitation des essais par adresse et globale, sessions invalidées au changement de mot de passe. | [Manage secrets in Azure Container Apps](https://learn.microsoft.com/azure/container-apps/manage-secrets#referencing-secrets-in-environment-variables) |
-| Modèle de langage | **gpt-6.1-sol** (2026-09-29) déployé dans Microsoft Foundry en Global Standard, disponible en Australia East sans demande d'accès ; appelé par l'API Responses avec l'identité managée (rôle Cognitive Services OpenAI User), authentification locale désactivée. | [Foundry Models sold by Azure](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure#gpt-61), [Region availability](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability), [Keyless authentication](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/configure-entra-id) |
+| Modèle de langage | **gpt-6.1-sol** (2026-09-29) déployé dans Microsoft Foundry en **Data Zone Standard Asie-Pacifique** (décision du 31/10 : le quota Global Standard est un pool unique de la souscription, déjà consommé par d'autres projets ; le traitement reste en Asie-Pacifique), disponible en Australia East sans demande d'accès ; appelé par l'API Responses avec l'identité managée (rôle Cognitive Services OpenAI User), authentification locale désactivée. | [Foundry Models sold by Azure](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure#gpt-61), [Region availability](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability#data-zone-standard), [Quotas](https://learn.microsoft.com/azure/foundry/foundry-models/quotas-limits#subscription-level-quota-management), [Keyless authentication](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/configure-entra-id) |
 | Photos OneDrive (lot futur) | **OneDrive personnel** : seul l'accès délégué fonctionne, avec un jeton de rafraîchissement à stocker en secret. | [Selected permissions in OneDrive and SharePoint](https://learn.microsoft.com/graph/permissions-selected-overview), [Permissions reference](https://learn.microsoft.com/graph/permissions-reference#all-permissions) |
 | Journaux | Sortie console structurée, collectée par l'environnement dans `log-kiwi-apps`. Une page `/health` affiche la fraîcheur de chaque source. | [docs/socle.md du socle](https://github.com/Leumas09/platform/blob/main/docs/socle.md) |
 
@@ -310,10 +310,10 @@ Chaque phase se termine par quelque chose d'utilisable par la famille.
 | Maquettes Claude Design | ✅ lues |
 | Documentation Microsoft Learn | ✅ consultée et citée |
 | **Appeler les sources depuis cette session** | ❌ le réseau de l'environnement cloud refuse adsb.lol, Open-Meteo, NOAA SWPC, RFS, Beachwatch, MHL, Celestrak, RainViewer, BOM (seul `noaa-himawari9.s3.amazonaws.com` passe). Le spike se fera depuis Azure (phase 0), ou bien tu ajoutes ces domaines aux domaines autorisés de l'environnement. |
-| Session Azure (`az login` sur `ops@…`) | ❌ à faire par toi au moment du déploiement |
-| Création du dépôt `app-maroubra` | ❌ ton accord (voir E.2) |
+| Session Azure (`az login` sur `ops@…`) | ✅ utilisée pour le déploiement du 31/10/2026 |
+| Création du dépôt `app-maroubra` | ✅ fait (le dépôt est public, voir H.3) |
 | Comptes de la famille invités dans le tenant | ❌ à faire par toi (connexions interactives) |
-| gpt-6.1-sol dans Foundry | ✅ disponible en Australia East (Learn) ; quota à confirmer au déploiement |
+| gpt-6.1-sol dans Foundry | ✅ déployé en Data Zone Standard, 20 000 jetons/min (quota Global Standard épuisé) |
 | Historiques pour calibrer : traces ADS-B passées (archives publiques adsb.lol), séries du marégraphe (UHSLC ou MHL), archives METAR YSSY | ❌ à valider en phase 0 |
 
 ### E.2 Décisions (tranchées le 31/10/2026)
@@ -356,7 +356,7 @@ Les vrais chiffres sont publiés, même s'ils manquent la cible.
 
 ### E.4 Prochaine étape
 
-Voir la partie F : le banc et les premiers écrans sont faits. La suite (phase 0 Azure) demande toujours tes réponses à E.2 et ton OK sur un what-if.
+Voir la partie H : l'app est en production depuis le 01/11/2026. Restent les points de H.3.
 
 ---
 
@@ -425,7 +425,7 @@ Méthode météo : six variantes comparées à chaque échéance (modèle brut G
 
 ## Partie G : développement complet (31 octobre 2026)
 
-Développé d'un seul tenant, sans phases imposées. Tout est testé localement ; le déploiement attend ton OK sur le what-if (`docs/DEPLOY.md`).
+Développé d'un seul tenant, sans phases imposées. Tout est testé localement ; le déploiement est décrit en partie H.
 
 ### G.1 Ce qui est construit
 
@@ -443,9 +443,9 @@ Développé d'un seul tenant, sans phases imposées. Tout est testé localement 
 
 ### G.2 Ce qui reste à vérifier en production
 
-- Les sources bloquées par le réseau de cette session (Open-Meteo, adsb.lol, RFS, SWPC, Celestrak, Google News, aviationweather) : leur état apparaît dans `/health` dès le démarrage.
-- Le quota de gpt-6.1-sol sur l'abonnement.
-- La réception des notifications sur Android et iPhone (installée sur l'écran d'accueil).
+- ✅ Les sources bloquées par le réseau de cette session : les 14 sources sont à `ok: true` dans `/health` en production (01/11/2026).
+- ✅ Le quota de gpt-6.1-sol : épuisé en Global Standard, déployé en Data Zone Standard.
+- La réception des notifications sur Android et iPhone (installée sur l'écran d'accueil) : à confirmer par Samuel.
 
 ### G.3 Lots suivants
 
@@ -453,3 +453,35 @@ Développé d'un seul tenant, sans phases imposées. Tout est testé localement 
 2. Job de vérification nocturne sur l'archive : Track record glissant en production, correction apprise GFS + IFS réentraînée chaque nuit.
 3. Image satellite Himawari à l'écran et jugement du score de lever de soleil.
 4. Marégraphe à la minute pour valider les heures de marée.
+
+## Partie H : mise en production (31 octobre et 1er novembre 2026)
+
+`https://maroubra.apps.akakiwi.com` sert le commit fusionné `5c93d9f` (PR #1).
+
+### H.1 État vérifié
+
+| Point | Preuve |
+|---|---|
+| Infra | `az deployment sub show -n app-maroubra` : `Succeeded` ; 17 ressources, tag `project=maroubra` ; dans `rg-kiwi-apps`, seulement AcrPull et AcrPush `project=maroubra` sur `crkiwiapps` (socle toujours à 12 ressources) |
+| Workflow | run `deploy` 41257418177 vert : OIDC au sujet immuable, build, push, mise à jour, « Version servie : 5c93d9f… » |
+| App | révision `maroubra--0000002`, `Healthy`, 100 % du trafic, port 8080, sondes `/health` |
+| `/health` | `status: ok`, `version: 5c93d9faafc0782001a9a7266150e2c3a9682a17`, les 14 sources à `ok: true` |
+| Modèle | métrique `ModelRequests` : appels sur `gpt-6.1-sol`, tous en `200` ; aucun `brief_failed` dans les journaux |
+| Accès | `/` répond 303 vers `/login` ; certificat `CN=*.apps.akakiwi.com` Let's Encrypt valide ; DNS vers `20.11.92.20` |
+| GitHub | 4 variables de dépôt ; aucun secret Actions ou Dependabot ; aucun environnement |
+
+### H.2 Constats du déploiement
+
+1. **Quota du modèle.** Le quota Global Standard de gpt-6.1-sol est un pool unique de la souscription, déjà dépassé par deux déploiements d'autres projets en eastus2 (capacité disponible 0). Passage en Data Zone Standard Asie-Pacifique (`modelSku`).
+2. **What-if incomplet.** Les modules recevaient des sorties d'autres modules : le what-if les court-circuitait et n'annonçait que 4 créations sur 17. Les modules lisent maintenant identités et stockage par `existing`.
+3. **Droits du compte `ops@`.** La condition de son rôle RBAC Administrator n'autorisait pas Cognitive Services OpenAI User. Samuel l'a ajouté le 31/10.
+4. **Environnement suspendu.** Pendant la création de l'app, `cae-kiwi-apps` a renvoyé `ManagedClusterSuspended` (« suspended due to unknown reasons »), puis s'est rétabli seul ; déploiement en 16 min 40 s. Cause inconnue : pas de doc Learn, crédits disponibles, Acmebot actif.
+5. **Port au premier build.** L'infra créée avec l'image de démonstration règle l'ingress sur 80 ; `az containerapp update --image` ne le change pas. Redéploiement de l'infra avec `containerImage`, puis relance du job (procédure dans `docs/DEPLOY.md`, section 6).
+
+### H.3 Reste à faire
+
+- **Secrets.** Les trois secrets du premier déploiement (31/10) ont été exposés pendant la session de déploiement. La clé de session et les clés VAPID ont été régénérées par le redéploiement du 01/11 et n'ont pas été exposées. Le mot de passe familial reste à changer s'il a été ressaisi à l'identique, à la demande de Samuel (« dans un second temps ») ; procédure : `docs/DEPLOY.md`, « Plus tard ».
+- Confirmer à la connexion que le brief affiche bien `by: "model"`, et la réception des notifications sur Android et iPhone.
+- Le dépôt est **public**, alors que la convention du socle le veut privé : décision de Samuel.
+- `main` n'est pas protégée : aucune relecture ni aucun check n'est imposé avant fusion.
+- Dans le dépôt du socle, `docs/droits.md` décrit encore une condition à 6 rôles.

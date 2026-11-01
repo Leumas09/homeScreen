@@ -21,21 +21,28 @@ Les secrets acceptés pour ce projet sont trois secrets de la Container App :
 | Identité de déploiement | `id-maroubra-ci` + crédential fédéré GitHub (branche `main`) | workflow en OIDC |
 | Rôles sur l'ACR du socle | AcrPull (`run`), AcrPush (`ci`) | seule exception hors du groupe, description `project=maroubra` |
 | Compte de stockage | `stmaroubra…` | tables `archive`, `push`, `votes` ; clé partagée désactivée ; rôle Storage Table Data Contributor pour `run` |
-| Microsoft Foundry | `ai-maroubra-…` (AIServices) | déploiement `gpt-6.1-sol` (2026-09-29, Global Standard, 20 000 jetons/min) ; authentification locale désactivée ; rôle Cognitive Services OpenAI User pour `run` |
+| Microsoft Foundry | `ai-maroubra-…` (AIServices) | déploiement `gpt-6.1-sol` (2026-09-29, Data Zone Standard Asie-Pacifique, 20 000 jetons/min) ; authentification locale désactivée ; rôle Cognitive Services OpenAI User pour `run` |
 | Container App | `maroubra` dans `cae-kiwi-apps` | 1 réplica permanent, 0,5 vCPU / 1 Gio, 3 secrets, sondes `/health` ; rôle Container Apps Contributor pour `ci` sur l'app seule |
 
 Sources Learn : voir les commentaires en tête de chaque fichier `infra/*.bicep` et la partie C de `docs/PLAN.md`.
 
-## 0. Le dépôt
+## 0. Prérequis
 
-La convention du socle veut un dépôt `app-<nom>`. Le plus simple est de renommer ce dépôt **avant** de créer l'infra, car le sujet OIDC contient le nom et l'ID du dépôt :
+Le dépôt s'appelle déjà `app-maroubra`. Le sujet OIDC contient son nom et son ID, et ce dépôt émet le format immuable (`use_immutable_subject: true`) :
 
 ```bash
-gh repo rename app-maroubra -R Leumas09/homeScreen
-gh api repos/Leumas09/app-maroubra --jq '.owner.id, .id'
+gh api repos/Leumas09/app-maroubra --jq '.owner.id, .id'          # 15143848, 1432707561
+gh api repos/Leumas09/app-maroubra/actions/oidc/customization/sub
 ```
 
-Si tu préfères garder `homeScreen`, ajoute `githubRepo=homeScreen` aux paramètres des étapes 3 et 4.
+Droits du compte `ops@` : la condition de son rôle Role Based Access Control Administrator doit autoriser Cognitive Services OpenAI User (`5e0bd9bd-7b93-4f28-af87-19fc36ad61bd`), en plus d'AcrPull, AcrPush, Container Apps Contributor et Storage Table Data Contributor. Sans lui, le what-if avec contrôle des droits échoue sur l'attribution de rôle du compte Foundry (ajouté par Samuel le 31/10/2026).
+
+Quota du modèle : le quota Global Standard d'un modèle est un pool unique pour toute la souscription, toutes régions confondues ([Learn](https://learn.microsoft.com/azure/foundry/foundry-models/quotas-limits#subscription-level-quota-management)). Il est consommé par d'autres projets, d'où le déploiement en Data Zone Standard (paramètre `modelSku` de `infra/ai.bicep`). Pour vérifier :
+
+```bash
+az rest --method get --url "https://management.azure.com/subscriptions/0f055e5f-3d37-4d3a-9ffa-574e4402001d/providers/Microsoft.CognitiveServices/modelCapacities?api-version=2024-10-01&modelFormat=OpenAI&modelName=gpt-6.1-sol&modelVersion=2026-09-29" \
+  --query "value[?location=='australiaeast'].{sku:properties.skuName, dispo:properties.availableCapacity}" -o table
+```
 
 ## 1. Session Azure
 
@@ -55,9 +62,11 @@ SESSION_SECRET=$(openssl rand -base64 48)
 VAPID=$(npx --yes web-push@3.6.7 generate-vapid-keys --json)
 VAPID_PUBLIC=$(echo "$VAPID" | jq -r .publicKey)
 VAPID_PRIVATE=$(echo "$VAPID" | jq -r .privateKey)
-OWNER_ID=<owner id de l'étape 0>
-REPO_ID=<repo id de l'étape 0>
+OWNER_ID=15143848
+REPO_ID=1432707561
 ```
+
+Les secrets passent en arguments d'`az` : ils sont visibles dans la liste des processus de la session pendant le déploiement. Ne lance ni `ps` ni `Get-Process` avec la ligne de commande pendant ce temps, et suis le déploiement avec `az deployment sub show` uniquement.
 
 ## 3. Build et what-if
 
@@ -69,7 +78,11 @@ az deployment sub what-if --location australiaeast --template-file infra/main.bi
                vapidPublicKey="$VAPID_PUBLIC" vapidPrivateKey="$VAPID_PRIVATE"
 ```
 
-Ce que le what-if doit annoncer : 15 créations environ et aucune modification ni suppression dans `rg-kiwi-apps`, hormis l'ajout des deux rôles sur `crkiwiapps`. Le build a été vérifié avec Bicep 0.48.1 : aucune erreur, aucun avertissement.
+Ce que le what-if doit annoncer au premier déploiement : **17 créations**, aucune modification ni suppression, aucun diagnostic. 15 dans `rg-app-maroubra` (groupe compris) et, dans `rg-kiwi-apps`, seulement les deux rôles sur `crkiwiapps`. Le build a été vérifié avec Bicep 0.48.1 : aucune erreur, aucun avertissement.
+
+Si le what-if signale `NestedDeploymentShortCircuited`, un module reçoit une valeur calculée à l'exécution et ses ressources n'apparaissent pas : le plan est alors incomplet. Les modules lisent identités et stockage par `existing` pour l'éviter ([Learn](https://learn.microsoft.com/azure/azure-resource-manager/bicep/linter-rule-what-if-short-circuiting)).
+
+Pour les paramètres sécurisés et `vapidPublicKey`, des valeurs factices (`whatif-only`) suffisent au what-if : il ne montre jamais une valeur sécurisée.
 
 ## 4. Déploiement (après ton OK sur le what-if)
 
@@ -80,7 +93,9 @@ az deployment sub create --location australiaeast --name app-maroubra --template
                vapidPublicKey="$VAPID_PUBLIC" vapidPrivateKey="$VAPID_PRIVATE"
 ```
 
-**Si le déploiement du modèle échoue pour quota**, relance avec `modelCapacity=10`. Le brief et le tri des actualités consomment très peu.
+**Si le déploiement du modèle échoue pour quota**, vérifie la capacité disponible (étape 0) : `modelCapacity=10` ne sert que s'il reste de la place dans le pool. Le brief et le tri des actualités consomment très peu.
+
+Le premier déploiement a duré 16 min 40 s le 31/10/2026 : l'environnement `cae-kiwi-apps` a renvoyé `ManagedClusterSuspended` pendant la création de l'app, puis s'est rétabli seul. Ne pas interrompre un déploiement en cours (constat 1 du test `smoke` du socle).
 
 ## 5. Variables du dépôt (pas des secrets)
 
@@ -95,6 +110,13 @@ gh secret list -R Leumas09/app-maroubra   # doit être vide
 ## 6. Mise en ligne
 
 Fusionner la branche de développement dans `main`. Le workflow `deploy` lance les tests, construit l'image, la pousse dans `crkiwiapps`, met l'app à jour, puis vérifie que `https://maroubra.apps.akakiwi.com/health` sert bien la version du commit.
+
+**Au premier passage, l'étape « Vérification du déploiement » échoue, et c'est attendu.** L'infra a été créée avec l'image de démonstration : `project.bicep` règle alors l'ingress sur le port 80, sans sondes. `az containerapp update --image` change seulement l'image, donc la nouvelle révision reste en `Activating` (l'app écoute sur 8080). Correction, sans rien modifier à la main :
+
+1. Redéployer l'infra (étape 4) en ajoutant `containerImage=crkiwiapps.azurecr.io/maroubra:<sha du premier run>`, après what-if et OK. Le what-if annonce alors `targetPort` 80 vers 8080 et l'ajout des sondes. Les paramètres sécurisés sont à repasser, donc la clé de session et les clés VAPID sont régénérées.
+2. Relancer le job en échec : `gh run rerun <id> -R Leumas09/app-maroubra --failed`.
+
+Les déploiements suivants du workflow n'ont plus ce problème.
 
 ## 7. Vérifications
 
