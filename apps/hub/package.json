@@ -1,0 +1,33 @@
+{
+  "name": "@maroubra/hub",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/index.mjs --log-level=warning --banner:js=\"import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);\"",
+    "start": "node dist/index.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@azure/data-tables": "13.3.1",
+    "@azure/identity": "4.13.0",
+    "@hono/node-server": "1.19.5",
+    "@maroubra/sky": "0.1.0",
+    "fast-xml-parser": "5.3.0",
+    "hono": "4.10.4",
+    "hyparquet": "1.20.1",
+    "satellite.js": "6.0.1",
+    "web-push": "3.6.7",
+    "@maroubra/core": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.12",
+    "@types/web-push": "3.6.4",
+    "esbuild": "0.25.11",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

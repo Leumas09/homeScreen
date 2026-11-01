@@ -1,0 +1,308 @@
+{
+  "generated": "2026-10-31",
+  "checks": [
+    {
+      "name": "Temperature at Sydney Airport",
+      "judge": "Observations, held-out period",
+      "target": "error \u221225% vs raw",
+      "result": "\u221234.3% (95%: 29.4 to 38.9)",
+      "pass": true
+    },
+    {
+      "name": "Wind at Sydney Airport",
+      "judge": "Observations, held-out period",
+      "target": "error \u221225% vs raw",
+      "result": "\u221215.9% (95%: 12.6 to 19.1)",
+      "pass": false
+    },
+    {
+      "name": "Wave height at the Sydney buoy",
+      "judge": "Observations, held-out period",
+      "target": "error below raw model",
+      "result": "no correction beats the raw model, raw kept",
+      "pass": false
+    },
+    {
+      "name": "High and low tide heights, 2025",
+      "judge": "IMOS ORS065 sensors, year held out",
+      "target": "within 10 cm",
+      "result": "3.0 cm on average, 90% within 5.5 cm",
+      "pass": true
+    },
+    {
+      "name": "High and low tide times, 2025",
+      "judge": "IMOS ORS065 sensors, year held out",
+      "target": "within 5 min",
+      "result": "14 min, but the sensor alone adds 14 min",
+      "pass": false,
+      "status": "untestable"
+    },
+    {
+      "name": "Sun and Moon rise and set, 2027",
+      "judge": "Skyfield + JPL DE421",
+      "target": "within 30 s",
+      "result": "worst 2.1 s",
+      "pass": true
+    },
+    {
+      "name": "Planet positions, 2027 evenings",
+      "judge": "Skyfield + JPL DE421",
+      "target": "within 1\u2032",
+      "result": "worst 0.23\u2032",
+      "pass": true
+    },
+    {
+      "name": "Space Station visible passes",
+      "judge": "Skyfield (SGP4, JPL DE421), real ISS orbit of July 2018",
+      "target": "same passes, within 20 s",
+      "result": "3 of 3 passes, identical at 10 s sampling",
+      "pass": true
+    }
+  ],
+  "verifications": [
+    {
+      "title": "Temperature at Sydney Airport",
+      "unit": "\u00b0C",
+      "best": "learned correction",
+      "gain": 0.3428708130310615,
+      "ci": [
+        0.29434684052531845,
+        0.38905021628867875
+      ],
+      "target": 0.25,
+      "test": "2025-02-01 to 2025-08-24, 3252 forecasts",
+      "methods": [
+        {
+          "name": "Raw model (GFS)",
+          "mae": 1.2550533921035867
+        },
+        {
+          "name": "Bias removed",
+          "mae": 1.120261435562454
+        },
+        {
+          "name": "Linear MOS",
+          "mae": 1.001127741631586
+        },
+        {
+          "name": "Running bias (NOAA method)",
+          "mae": 1.03744192631076
+        },
+        {
+          "name": "Raw model (ECMWF IFS)",
+          "mae": 1.1808728242902142
+        },
+        {
+          "name": "GFS + IFS average",
+          "mae": 1.1667819303996525
+        },
+        {
+          "name": "Learned correction",
+          "mae": 0.8247322151556383
+        }
+      ],
+      "leads": [
+        {
+          "lead": 6,
+          "raw": 1.2556681247409607,
+          "best": 0.7708069046402353
+        },
+        {
+          "lead": 12,
+          "raw": 1.1667779100840623,
+          "best": 0.8267430328365626
+        },
+        {
+          "lead": 18,
+          "raw": 1.2647207595697025,
+          "best": 0.7953981887897053
+        },
+        {
+          "lead": 24,
+          "raw": 1.2086668612407703,
+          "best": 0.8357633888254089
+        },
+        {
+          "lead": 30,
+          "raw": 1.3114988553982894,
+          "best": 0.8166970085841098
+        },
+        {
+          "lead": 36,
+          "raw": 1.2144470287377025,
+          "best": 0.8427868071042866
+        },
+        {
+          "lead": 42,
+          "raw": 1.3404632003840502,
+          "best": 0.8431115654067394
+        },
+        {
+          "lead": 48,
+          "raw": 1.2785581985691707,
+          "best": 0.8663716722492089
+        }
+      ]
+    },
+    {
+      "title": "Wind at Sydney Airport",
+      "unit": "m/s",
+      "best": "learned correction",
+      "gain": 0.15894873975379997,
+      "ci": [
+        0.125560462515851,
+        0.19069193088841588
+      ],
+      "target": 0.25,
+      "test": "2025-02-01 to 2025-08-24, 3256 forecasts",
+      "methods": [
+        {
+          "name": "Raw model (GFS)",
+          "mae": 1.4306909993089516
+        },
+        {
+          "name": "Bias removed",
+          "mae": 1.345068360220363
+        },
+        {
+          "name": "Linear MOS",
+          "mae": 1.2680436864265747
+        },
+        {
+          "name": "Running bias (NOAA method)",
+          "mae": 1.3640509077561902
+        },
+        {
+          "name": "Raw model (ECMWF IFS)",
+          "mae": 1.5552533560665345
+        },
+        {
+          "name": "GFS + IFS average",
+          "mae": 1.42131202557231
+        },
+        {
+          "name": "Learned correction",
+          "mae": 1.203284467991689
+        }
+      ],
+      "leads": [
+        {
+          "lead": 6,
+          "raw": 1.2905452445995393,
+          "best": 1.142933149790501
+        },
+        {
+          "lead": 12,
+          "raw": 1.3997157816339618,
+          "best": 1.1467206127127527
+        },
+        {
+          "lead": 18,
+          "raw": 1.4393234622067732,
+          "best": 1.18757966312477
+        },
+        {
+          "lead": 24,
+          "raw": 1.4390068592556757,
+          "best": 1.193676869498648
+        },
+        {
+          "lead": 30,
+          "raw": 1.449102179446152,
+          "best": 1.2466766376596736
+        },
+        {
+          "lead": 36,
+          "raw": 1.4312928221250658,
+          "best": 1.1809642955904187
+        },
+        {
+          "lead": 42,
+          "raw": 1.5217973781830625,
+          "best": 1.2946882561146742
+        },
+        {
+          "lead": 48,
+          "raw": 1.474744267021383,
+          "best": 1.2330362594420723
+        }
+      ]
+    },
+    {
+      "title": "Wave height at the Sydney buoy",
+      "unit": "m",
+      "best": "bias removed",
+      "gain": -0.003511143521760962,
+      "ci": [
+        -0.03905672736137784,
+        0.029861607748855438
+      ],
+      "target": 0.0,
+      "test": "2025-07-01 to 2026-07-02, 4019 forecasts",
+      "methods": [
+        {
+          "name": "Raw model (GFS)",
+          "mae": 0.23978105196488925
+        },
+        {
+          "name": "Bias removed",
+          "mae": 0.24062295765213682
+        },
+        {
+          "name": "Linear MOS",
+          "mae": 0.2445073608163284
+        },
+        {
+          "name": "Running bias (NOAA method)",
+          "mae": 0.24217799090960296
+        },
+        {
+          "name": "Learned correction",
+          "mae": 0.2550660064666504
+        }
+      ],
+      "leads": [
+        {
+          "lead": 6,
+          "raw": 0.234146541717392,
+          "best": 0.23019302891440074
+        },
+        {
+          "lead": 12,
+          "raw": 0.23683777304978193,
+          "best": 0.2363223303790115
+        },
+        {
+          "lead": 18,
+          "raw": 0.23623491218632925,
+          "best": 0.2382723187340989
+        },
+        {
+          "lead": 24,
+          "raw": 0.24289671040597638,
+          "best": 0.24412527263675657
+        },
+        {
+          "lead": 30,
+          "raw": 0.24274064725162953,
+          "best": 0.24350588407120694
+        },
+        {
+          "lead": 36,
+          "raw": 0.2413914106649464,
+          "best": 0.2443860210542186
+        },
+        {
+          "lead": 42,
+          "raw": 0.24058574765474894,
+          "best": 0.24230930130952616
+        },
+        {
+          "lead": 48,
+          "raw": 0.2435085797736399,
+          "best": 0.24601467913645114
+        }
+      ]
+    }
+  ]
+}
